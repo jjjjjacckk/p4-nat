@@ -28,9 +28,11 @@ def addNATTables(rAPI, origIPv4, origSrcPort, natIPv4):
                 pass #What to do for larger tags?
             else:
                 while natSrcPort < 2000:
+                    # assign port with random.read()
                     tagCand = bytearray(rndDesc.read(tagSize))
                     natSrcPort = 256*tagCand[1] + tagCand[0]
 
+                # add to NAT table
                 fwdtbl_str = "fwd_nat_tcp rewrite_srcAddrTCP {} {} => {} {}".format(origIPv4,
                  origSrcPort, natIPv4, natSrcPort)
                 print fwdtbl_str
@@ -74,8 +76,28 @@ def main():
 
     global rAPI, rndDesc
 
-    args = get_parser().parse_args()
+    # args = get_parser().parse_args()
 
+    parser = argparse.ArgumentParser(description='Runtime CLI')
+    parser.add_argument('--thrift-port', help='Thrift server port for table updates',
+                        type=int, action="store", required=True)
+
+    parser.add_argument('--thrift-ip', help='Thrift IP address for table updates',
+                        type=str, action="store", default='localhost')
+
+    parser.add_argument('--json', help='JSON description of P4 program',
+                        type=str, action="store", required=False)
+
+    parser.add_argument('--pre', help='Packet Replication Engine used by target',
+                        type=str, choices=['None', 'SimplePre', 'SimplePreLAG'],
+                        default=PreType.SimplePre, action=ActionToPreType)
+
+    parser.add_argument('--iface', help='Controller interface',
+                        type=str, action="store", required=True)
+
+    args = parser.parse_args()
+
+    # connect to thrift pot
     standard_client, mc_client = thrift_connect(
         args.thrift_ip, args.thrift_port,
         RuntimeAPI.get_thrift_services(args.pre)
