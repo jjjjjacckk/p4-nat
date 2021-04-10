@@ -46,6 +46,7 @@ def addNATTables(rAPI, origIPv4, origSrcPort, natIPv4):
                 rAPI.onecmd("table_add " + revtbl_str)
                 revSuccess = True
         except InvalidTableOperation as e:
+            # handle dupclicate entry -> entry already exist
             if e.code == TableOperationErrorCode.DUPLICATE_ENTRY:
                 # Revert
                 if fwdSuccess:
