@@ -74,10 +74,15 @@ class ExerciseTopo(Topo):
 
         # assumes host always comes first for host<-->switch links
         for link in links:
-            if link['node1'][0] == 'h' or link['node1'][:-1] == 'server':
+            print '[ TOPO ] link[\'node1\'][:-1] = ', link['node1'][:-1]
+            if link['node1'][:-1] == 'h' or link['node1'][:-1] == 'server':
                 host_links.append(link)
             else:
                 switch_links.append(link)
+
+        print '[ TOPO ] host_links = ', host_links
+        print '[ TOPO ] switch_links = ', switch_links
+
 
         for sw, params in switches.iteritems():
             print '[ TOPO ] sw = ', sw, ', params = ', params
@@ -89,6 +94,7 @@ class ExerciseTopo(Topo):
             else:
                 # add default switch
                 switchClass = None
+            print '[ ExerciseTOPO ] log_dir = ', log_dir
             self.addSwitch(sw, log_file="%s/%s.log" % (log_dir, sw), cls=switchClass)
 
         for link in host_links:
@@ -110,6 +116,7 @@ class ExerciseTopo(Topo):
 
 
     def parse_switch_node(self, node):
+        print '[ parse_switch_node ] len(node.split(\'-\')) = ', len(node.split('-')), ', node = ', node
         assert(len(node.split('-')) == 2)
         sw_name, sw_port = node.split('-')
         try:
@@ -223,13 +230,15 @@ class ExerciseRunner:
                         'latency':'0ms',
                         'bandwidth':None
                         }
+            print '[ parse_link ] node1 = ', s, ', node2 = ', t
             if len(link) > 2:
                 link_dict['latency'] = self.format_latency(link[2])
             if len(link) > 3:
                 link_dict['bandwidth'] = link[3]
 
             if link_dict['node1'][0] == 'h':
-                assert link_dict['node2'][0] == 's', 'Hosts should be connected to switches, not ' + str(link_dict['node2'])
+                print '[ parse_link ] link_dict[\'node2\'][:3] = ', link_dict['node2'][:3]
+                assert link_dict['node2'][:3] == 'nat', 'Hosts should be connected to switches, not ' + str(link_dict['node2'])
             links.append(link_dict)
         return links
 
@@ -367,7 +376,7 @@ def get_args():
     parser.add_argument('-q', '--quiet', help='Suppress log messages.',
                         action='store_true', required=False, default=False)
     parser.add_argument('-t', '--topo', help='Path to topology json',
-                        type=str, required=False, default='./topology.json')
+                        type=str, required=False, default='../topology.json')
     parser.add_argument('-l', '--log-dir', type=str, required=False, default=default_logs)
     parser.add_argument('-p', '--pcap-dir', type=str, required=False, default=default_pcaps)
     parser.add_argument('-j', '--switch_json', type=str, required=True)
@@ -381,7 +390,8 @@ if __name__ == '__main__':
     # setLogLevel("info")
 
     args = get_args()
-    # print(args)
+    print '[ main ] args = ', args
+
     # behavioral_exe='simple_switch'
     # log_dir='/home/p4/Desktop/p4-nat/logs'
     # pcap_dir='/home/p4/Desktop/p4-nat/pcaps'
