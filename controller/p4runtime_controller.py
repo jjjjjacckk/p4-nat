@@ -18,13 +18,45 @@ import p4runtime_lib.helper
 
 global seq
 
-# def WriteTableEntry():
-# send_frame
-# forward
-# ipv4_lpm
-# fwd_nat_tcp
-# rev_nat_tcp
-# match_nat_tcp
+def WriteTableEntry():
+    # [ ingress ]
+    # send_frame : gateway MAC (frame -> don't know)
+    # fwd_nat_tcp : rewrite packet source address
+    # [ egress ]
+    # forward : ARP translate "destination" address to MAC address
+    # ipv4_lpm : ipv4 forwarding (map egress dst to egress port)
+    # rev_nat_tcp : recwrite packet destination address
+    # match_nat_tcp : matching NAT IP table
+    print '[ WriteTableEntry ]'
+
+    # [ ingress ]
+    #   - [ send_frame ]
+    #       - [ NAT_1 ]
+    #       - spec (connect to switch) -> gateway MAC
+    #           - table_add send_frame rewrite_mac 1 => 08:00:00:00:00:01:11
+    #           - table_add send_frame rewrite_mac 2 => 08:00:00:00:00:02:22
+    #           - table_add send_frame rewrite_mac 3 => 08:00:00:00:00:03:33
+    #           - table_add send_frame rewrite_mac 4 => 08:00:00:00:00:04:44
+    #   - [ forward ]
+    #       - table_add forward set_dmac 10.0.1.11 => 08:00:00:00:00:01:11
+    #       - table_add forward set_dmac 10.0.2.22 => 08:00:00:00:00:02:22
+    #       - table_add forward set_dmac 10.0.3.33 => 08:00:00:00:00:03:33
+    #       - table_add forward set_dmac 10.0.4.44 => 08:00:00:00:00:04:44
+    #       - table_add forward set_dmac 140.116.0.1 => 08:00:00:00:00:05:55
+    #       - table_add forward set_dmac 140.116.0.2 => 08:00:00:00:00:06:66
+    #   - [ ipv4_lpn ] 
+    #       - [ NAT_1 ]
+    #           - table_add ipv4_lpm set_nhop 10.0.1.11/32 => 10.0.1.11 1
+    #           - table_add ipv4_lpm set_nhop 10.0.2.22/32 => 10.0.2.22 2
+    #           - table_add ipv4_lpm set_nhop 140.116.0.1/32 => 140.116.0.1 3
+    #           - table_add ipv4_lpm set_nhop 140.116.0.2/32 => 140.116.0.2 4
+    #   - [ match_nat_ip ]
+    #       - to send NAT IP to controller ?!
+    #   - [ fwd_nat_tcp ]
+    #       - table_add fwd_nat_tcp rewrite_srcAddrTCP HOST_IP HOST2NAT_PORT => NAT_IP ALLOCATE_PORT
+    #   - [ rev_nat_tcp ]
+    #       - table_add rev_nat_tcp rewrite_dstAddrTCP NAT_IP ALLOCATE_PORT => HOST_IP HOST2NAT_PORT
+
 
 
 def main(p4info_file_path, bmv2_file_path):
@@ -37,38 +69,38 @@ def main(p4info_file_path, bmv2_file_path):
     seq = random.sample(range(0, 65536), 65536)
 
     try:
-        # Create a switch connection object for s1 and s2;
+        # Create a switch connection object for nat1 and s2;
         # this is backed by a P4Runtime gRPC connection.
         # Also, dump all P4Runtime messages sent to switch to given txt files.
-        s1 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-            name='s1',
+        nat1 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
+            name='nat1',
             address='127.0.0.1:50051',
             device_id=0,
-            proto_dump_file='../logs/s1-p4runtime-requests.txt')
-        s2 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-            name='s2',
+            proto_dump_file='../logs/nat1-p4runtime-requests.txt')
+        nat2 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
+            name='nat2',
             address='127.0.0.1:50052',
             device_id=1,
-            proto_dump_file='../logs/s2-p4runtime-requests.txt')
+            proto_dump_file='../logs/nat2-p4runtime-requests.txt')
 
-        print '[ main ] s1 = ', s1
-        print '[ main ] s2 = ', s2
+        print '[ main ] nat1 = ', nat1
+        print '[ main ] nat2 = ', nat2
 
         # Send master arbitration update message to establish this controller as
         # master (required by P4Runtime before performing any other write operation)
-        s1.MasterArbitrationUpdate()
-        s2.MasterArbitrationUpdate()
+        nat1.MasterArbitrationUpdate()
+        nat2.MasterArbitrationUpdate()
 
-        print '[ main ] s1 = ', s1
-        print '[ main ] s2 = ', s2
+        print '[ main ] nat1 = ', nat1
+        print '[ main ] nat2 = ', nat2
 
         # Install the P4 program on the switches
-        s1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
+        nat1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
                                        bmv2_json_file_path=bmv2_file_path)
-        print "Installed P4 Program using SetForwardingPipelineConfig on s1"
-        s2.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
+        print "Installed P4 Program using SetForwardingPipelineConfig on nat1"
+        nat2.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
                                        bmv2_json_file_path=bmv2_file_path)
-        print "Installed P4 Program using SetForwardingPipelineConfig on s2"
+        print "Installed P4 Program using SetForwardingPipelineConfig on nat2"
 
         # TODO: start on doing inserting nat tables
 
