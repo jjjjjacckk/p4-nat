@@ -102,6 +102,7 @@ class P4InfoHelper(object):
             exact.value = encode(value, bitwidth)
         elif match_type == p4info_pb2.MatchField.LPM:
             lpm = p4runtime_match.lpm
+            print '[ helper.py ] lpm = ', lpm, ', value = ', value 
             lpm.value = encode(value[0], bitwidth)
             lpm.prefix_len = value[1]
         elif match_type == p4info_pb2.MatchField.TERNARY:

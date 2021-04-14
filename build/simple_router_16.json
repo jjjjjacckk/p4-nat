@@ -1195,7 +1195,7 @@
         "filename" : "./simple_router_16.p4",
         "line" : 188,
         "column" : 8,
-        "source_fragment" : "ingress"
+        "source_fragment" : "MyIngress"
       },
       "init_table" : "node_2",
       "tables" : [
@@ -1497,7 +1497,7 @@
         "filename" : "./simple_router_16.p4",
         "line" : 141,
         "column" : 8,
-        "source_fragment" : "egress"
+        "source_fragment" : "MyEgress"
       },
       "init_table" : "node_13",
       "tables" : [

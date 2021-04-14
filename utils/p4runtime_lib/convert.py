@@ -65,16 +65,22 @@ def encode(x, bitwidth):
     encoded_bytes = None
     if type(x) == str:
         if matchesMac(x):
+            print '[ CONVERT ] matchesMac!'
             encoded_bytes = encodeMac(x)
         elif matchesIPv4(x):
+            print '[ CONVERT ] matchesIPv4!'
             encoded_bytes = encodeIPv4(x)
         else:
             # Assume that the string is already encoded
+            print '[ CONVERT ] Already Encode!'
             encoded_bytes = x
     elif type(x) == int:
         encoded_bytes = encodeNum(x, bitwidth)
     else:
         raise Exception("Encoding objects of %r is not supported" % type(x))
+    
+    print '[ CONVERT ] ', len(encoded_bytes), ' ', repr(encoded_bytes), ' ',  type(encoded_bytes)
+    print '[ CONVERT ] ', byte_len, ' ', repr(x), ' ', type(x), ' ', bitwidth, '\n-'
     assert(len(encoded_bytes) == byte_len)
     return encoded_bytes
 

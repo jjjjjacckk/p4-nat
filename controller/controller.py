@@ -3,6 +3,7 @@ import sys
 import struct
 import os
 import random
+import argparse
 from Crypto import Random
 
 from scapy.all import sniff, IP, TCP, UDP, Raw
@@ -21,6 +22,7 @@ global rAPI, rndDesc
 def addNATTables(rAPI, origIPv4, origSrcPort, natIPv4):
     fwdSuccess = revSuccess = False
     while not (fwdSuccess and revSuccess):
+        print '[ addresses ] ', origIPv4, ' ', len(origIPv4.encode('utf-8')), ' ', natIPv4, ' ', len(natIPv4.encode('utf-8'))
         fwdSuccess = revSuccess = False
         natSrcPort = 0
         try:
@@ -77,26 +79,26 @@ def main():
 
     global rAPI, rndDesc
 
-    # args = get_parser().parse_args()
+    args = get_parser().parse_args()
 
-    parser = argparse.ArgumentParser(description='Runtime CLI')
-    parser.add_argument('--thrift-port', help='Thrift server port for table updates',
-                        type=int, action="store", required=True)
+    # parser = argparse.ArgumentParser(description='Runtime CLI')
+    # parser.add_argument('--thrift-port', help='Thrift server port for table updates',
+    #                     type=int, action="store", required=True)
 
-    parser.add_argument('--thrift-ip', help='Thrift IP address for table updates',
-                        type=str, action="store", default='localhost')
+    # parser.add_argument('--thrift-ip', help='Thrift IP address for table updates',
+    #                     type=str, action="store", default='localhost')
 
-    parser.add_argument('--json', help='JSON description of P4 program',
-                        type=str, action="store", required=False)
+    # parser.add_argument('--json', help='JSON description of P4 program',
+    #                     type=str, action="store", required=False)
 
-    parser.add_argument('--pre', help='Packet Replication Engine used by target',
-                        type=str, choices=['None', 'SimplePre', 'SimplePreLAG'],
-                        default=PreType.SimplePre, action=ActionToPreType)
+    # parser.add_argument('--pre', help='Packet Replication Engine used by target',
+    #                     type=str, choices=['None', 'SimplePre', 'SimplePreLAG'],
+    #                     default=PreType.SimplePre, action=ActionToPreType)
 
-    parser.add_argument('--iface', help='Controller interface',
-                        type=str, action="store", required=True)
+    # parser.add_argument('--iface', help='Controller interface',
+    #                     type=str, action="store", required=True)
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
     # connect to thrift pot
     standard_client, mc_client = thrift_connect(

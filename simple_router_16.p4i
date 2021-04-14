@@ -918,7 +918,7 @@ parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout 
     }
 }
 
-control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
+control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     @name(".rewrite_srcAddrTCP") action rewrite_srcAddrTCP(bit<32> ipv4Addr, bit<16> port) {
         hdr.ipv4.srcAddr = ipv4Addr;
         hdr.tcp.srcPort = port;
@@ -965,7 +965,7 @@ control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t
     }
 }
 
-control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
+control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     @name(".set_dmac") action set_dmac(bit<48> dmac) {
         hdr.ethernet.dstAddr = dmac;
     }
@@ -1091,8 +1091,8 @@ control computeChecksum(inout headers hdr, inout metadata meta) {
 V1Switch(
     ParserImpl(),
     verifyChecksum(),
-    ingress(),
-    egress(),
+    MyIngress(),
+    MyEgress(),
     computeChecksum(),
     DeparserImpl()
 ) main;

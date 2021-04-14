@@ -16,61 +16,73 @@ from p4runtime_lib.error_utils import printGrpcError
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper
 
-global seq
+global seq_nat_1, seq_nat_2, seq_index_1, seq_index_2
 
-def WriteNATRule(P4InfoHelper, NATNumber):
+def MacAddr2fourtyEightbits(target):
+    a = target.split(':')
+    b = ""
+    for ele in a:
+        b += ele
+    
+    return b.decode('hex')
+
+def WriteNATRule(p4info_helper, NATNumber):
     # TODO: add table Entry
     print("WriteNATRule")
 
-def set_send_frame(P4InfoHelper, nat, port, gateway):
+def set_send_frame(p4info_helper, nat, port, gateway):
     table_entry = p4info_helper.buildTableEntry(
-        table_name="egress.send_frame", # NAME?!
+        table_name="send_frame", # NAME?!
         match_fields={
             "standard_metadata.egress_port": port # bit = 32?
         },
-        action_name="egress.rewrite_mac",
+        action_name="rewrite_mac",
         action_params={
-            "smac": "08:00:00:00:00:%02d:00" % gateway,
+            # "smac": "08:00:00:00:00:%02d:00" % gateway,
+            "smac": "08:00:00:00:%02d:00" % gateway,
         })
     nat.WriteTableEntry(table_entry)
 
-def set_forward(P4InfoHelper, nat, ipv4, number):
+def set_forward(p4info_helper, nat, ipv4, number):
+    print '[ set_forward ] ', ipv4, ' ', number
     table_entry = p4info_helper.buildTableEntry(
-        table_name="ingress.forward", # NAME?!
+        table_name="forward", # NAME?!
         match_fields={
-            "meta.routing_metadata.nhop_ipv4": ipv4
+            "routing_metadata.nhop_ipv4": ipv4
         },
-        action_name="ingress.set_dmac",
+        action_name="set_dmac",
         action_params={
-            "dmac": "08:00:00:00:00:%02d:%d%d" % (number, number, number),
+            "dmac": number,
         })
     nat.WriteTableEntry(table_entry)
 
-def set_ipv4_lpm(P4InfoHelper, nat, ipv4, port):
+def set_ipv4_lpm(p4info_helper, nat, ipv4, port):
     #   - table_add ipv4_lpm set_nhop 10.0.2.2/32 => 10.0.2.2 2
     #   - table_add ipv4_lpm set_nhop 140.116.0.1/32 => 140.116.0.1 3
     #   - table_add ipv4_lpm set_nhop 140.116.0.2/32 => 140.116.0.2 4
+    print '[ set_ipv4_lpm ]', ipv4, ' ', port
     table_entry = p4info_helper.buildTableEntry(
-        table_name="ingress.ipv4_lpm", # NAME?!
+        table_name="ipv4_lpm", # NAME?!
         match_fields={
-            "hdr.ipv4.dstAddr": '%s/32' % ipv4
+            "ipv4.dstAddr": [ipv4, 32],
         },
-        action_name="ingress.set_nhop",
+        action_name="set_nhop",
         action_params={
             "nhop_ipv4": ipv4,
-            "port": port
+            "port": 1
         })
     nat.WriteTableEntry(table_entry)
 
 def set_fwd_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
     # - table_add fwd_nat_tcp rewrite_srcAddrTCP HOST_IP HOST2NAT_PORT => NAT_IP ALLOCATE_PORT
+    print '[ set_fwd_nat_tcp ] ', hostIP, ' ', h2nPort, ' ', NATIP, ' ', allocatePort
     table_entry = p4info_helper.buildTableEntry(
-        table_name="egress.fwd_nat_tcp", # NAME?!
+        table_name="fwd_nat_tcp", # NAME?!
         match_fields={
-            "hdr.ipv4.srcAddr": hostIP,
-            "hdr.tcp.srcPort": h2nPort
+            "ipv4.srcAddr": hostIP,
+            "tcp.srcPort": h2nPort
         },
-        action_name="egress.rewrite_srcAddrTCP",
+        action_name="rewrite_srcAddrTCP",
         action_params={
             "ipv4Addr": NATIP,
             "port": allocatePort
@@ -79,13 +91,14 @@ def set_fwd_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
 
 def set_rev_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
     # - table_add fwd_nat_tcp rewrite_srcAddrTCP HOST_IP HOST2NAT_PORT => NAT_IP ALLOCATE_PORT
+    print '[ set_rev_nat_tcp ] ', hostIP, ' ', h2nPort, ' ', NATIP, ' ', allocatePort
     table_entry = p4info_helper.buildTableEntry(
-        table_name="ingress.rev_nat_tcp", # NAME?!
+        table_name="rev_nat_tcp", # NAME?!
         match_fields={
-            "hdr.ipv4.dstAddr": NATIP,
-            "hdr.tcp.dstPort": allocatePort
+            "ipv4.dstAddr": NATIP,
+            "tcp.dstPort": allocatePort
         },
-        action_name="ingress.rewrite_dstAddrTCP",
+        action_name="rewrite_dstAddrTCP",
         action_params={
             "ipv4Addr": hostIP,
             "tcpPort": h2nPort
@@ -95,6 +108,12 @@ def set_rev_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
 def WriteBasicRule(p4info_helper, nat1, nat2):
     # TODO: connection between hosts and switches
 
+    global seq_nat_1, seq_nat_2, seq_index_1, seq_index_2
+    # index: 0, 1 = set for server1 and server2 connection
+    seq_index_1 = 2
+    seq_index_2 = 2
+
+    print '[ WriteTableEntry ]'
     # [ ingress ]
     # send_frame : gateway MAC (frame -> don't know)
     # fwd_nat_tcp : rewrite packet source address
@@ -103,56 +122,44 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
     # ipv4_lpm : ipv4 forwarding (map egress dst to egress port)
     # rev_nat_tcp : recwrite packet destination address
     # match_nat_tcp : matching NAT IP table
-    print '[ WriteTableEntry ]'
 
     # send_frame (NAT1)
-    set_send_frame(P4InfoHelper, nat1, 1, 1)
-    set_send_frame(P4InfoHelper, nat1, 2, 2)
-    set_send_frame(P4InfoHelper, nat1, 3, 5)
-    set_send_frame(P4InfoHelper, nat1, 4, 6)
+    set_send_frame(p4info_helper, nat1, 1, 1)
+    set_send_frame(p4info_helper, nat1, 2, 2)
+    set_send_frame(p4info_helper, nat1, 3, 5)
+    set_send_frame(p4info_helper, nat1, 4, 6)
 
     # send_frame (NAT2)
-    set_send_frame(P4InfoHelper, nat2, 1, 3)
-    set_send_frame(P4InfoHelper, nat2, 2, 4)
-    set_send_frame(P4InfoHelper, nat2, 3, 5)
-    set_send_frame(P4InfoHelper, nat2, 4, 6)
+    set_send_frame(p4info_helper, nat2, 1, 3)
+    set_send_frame(p4info_helper, nat2, 2, 4)
+    set_send_frame(p4info_helper, nat2, 3, 5)
+    set_send_frame(p4info_helper, nat2, 4, 6)
 
     # forward
     for x in range(1, 5):
-        set_forward(P4InfoHelper, nat1, '10.0.%d.%d' % (x, x), '08:00:00:00:00:%02d:%d%d' % (x, x, x))
-        set_forward(P4InfoHelper, nat2, '10.0.%d.%d' % (x, x), '08:00:00:00:00:%02d:%d%d' % (x, x, x))
+        set_forward(p4info_helper, nat1, '10.0.%d.%d' % (x, x), '08:00:00:00:%02d:%d%d' % (x, x, x))
+        set_forward(p4info_helper, nat2, '10.0.%d.%d' % (x, x), '08:00:00:00:%02d:%d%d' % (x, x, x))
     
     for x in range(1, 3):
-        set_forward(P4InfoHelper, nat1, '140.116.0.%d' % x, '08:00:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
-        set_forward(P4InfoHelper, nat2, '140.116.0.%d' % x, '08:00:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
+        set_forward(p4info_helper, nat1, '140.116.0.%d' % x, '08:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
+        set_forward(p4info_helper, nat2, '140.116.0.%d' % x, '08:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
 
     # ipv4_lpm
     #   - table_add ipv4_lpm set_nhop 10.0.1.1/32 => 10.0.1.1 1
     for x in range(1, 3):
-        set_forward(P4InfoHelper, nat1, '10.0.%d.%d' % (x, x), x)
-        set_forward(P4InfoHelper, nat2, '10.0.%d.%d' % (x+2, x+2), x)
+        set_ipv4_lpm(p4info_helper, nat1, '10.0.%d.%d' % (x, x), x)
+        set_ipv4_lpm(p4info_helper, nat2, '10.0.%d.%d' % (x+2, x+2), x)
 
     for x in range(1, 3):
-        set_ipv4_lpm(P4InfoHelper, nat1, '140.116.0.%d' % x, x+2)
-        set_ipv4_lpm(P4InfoHelper, nat2, '140.116.0.%d' % x, x+2)
+        set_ipv4_lpm(p4info_helper, nat1, '140.116.0.%d' % x, x+2)
+        set_ipv4_lpm(p4info_helper, nat2, '140.116.0.%d' % x, x+2)
     
-    # TODO: ALLCATION_PORT
-    # fwd_nat_tcp
-    # - table_add fwd_nat_tcp rewrite_srcAddrTCP HOST_IP HOST2NAT_PORT => NAT_IP ALLOCATE_PORT
-    set_fwd_nat_tcp(P4InfoHelper, nat1, '10.0.1.1', 1, '140.116.0.3', ALLOCATE_PORT_NAT1_1)
-    set_fwd_nat_tcp(P4InfoHelper, nat1, '10.0.2.2', 2, '140.116.0.3', ALLOCATE_PORT_NAT1_2)
-    set_fwd_nat_tcp(P4InfoHelper, nat2, '192.168.3.3', 1, '140.116.0.4', ALLOCATE_PORT_NAT2_1)
-    set_fwd_nat_tcp(P4InfoHelper, nat2, '192.168.4.4', 2, '140.116.0.4', ALLOCATE_PORT_NAT2_2)
-
-    # TODO: ALLCATION_PORT
-    # rev_nat_tcp
-    # - table_add rev_nat_tcp rewrite_dstAddrTCP NAT_IP ALLOCATE_PORT => HOST_IP HOST2NAT_PORT
-    set_fwd_nat_tcp(P4InfoHelper, nat1, '10.0.1.1', 1, '140.116.0.3', ALLOCATE_PORT_NAT1_1)
-    set_fwd_nat_tcp(P4InfoHelper, nat1, '10.0.2.2', 2, '140.116.0.3', ALLOCATE_PORT_NAT1_2)
-    set_fwd_nat_tcp(P4InfoHelper, nat2, '192.168.3.3', 1, '140.116.0.4', ALLOCATE_PORT_NAT2_1)
-    set_fwd_nat_tcp(P4InfoHelper, nat2, '192.168.4.4', 2, '140.116.0.4', ALLOCATE_PORT_NAT2_2)
-
+    # TODO: forwarding 的邏輯要再看一下，因為我發現 fwd_nat_tcp 和 rev_nat_tcp 跟我想的有點不一樣
+    #       貌似會導致 dstAddr 變成 host 自己，封包根本傳不出去ＱＱＱ
+    # TODO: 順便看一下，要怎麼 trace NAT 對於封包的行為
+    #       p4 runtime?? 可是我在裡面只有看到加入 entry 的過程而已
     # TODO: pass ALLOCATION_PORT to switch
+    
 
 
 def main(p4info_file_path, bmv2_file_path):
@@ -161,8 +168,9 @@ def main(p4info_file_path, bmv2_file_path):
     print '[ main ] p4info_helper = ', p4info_helper
 
     # Generate source port sequence
-    global seq
-    seq = random.sample(range(0, 65536), 65536)
+    global seq_nat_1, seq_nat_2
+    seq_nat_1 = random.sample(range(0, 65536), 65536)
+    seq_nat_2 = random.sample(range(0, 65536), 65536)
 
     try:
         # Create a switch connection object for nat1 and s2;
@@ -199,6 +207,13 @@ def main(p4info_file_path, bmv2_file_path):
         print "Installed P4 Program using SetForwardingPipelineConfig on nat2"
 
         # TODO: start on doing inserting nat tables
+        WriteBasicRule(p4info_helper, nat1, nat2)
+
+        counter = 1
+        while True:
+            print '[ Waiting... %d]' % counter
+            counter += 1
+            sleep(2)
 
     except KeyboardInterrupt:
         print " Shutting down."
@@ -227,4 +242,5 @@ if __name__ == '__main__':
         print "\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json
         parser.exit(1)
 
+    print 'args.p4info  = %s' % args.p4info 
     main(args.p4info, args.bmv2_json)
