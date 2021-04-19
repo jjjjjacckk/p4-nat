@@ -16,7 +16,8 @@ from p4runtime_lib.error_utils import printGrpcError
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper
 
-global seq_nat_1, seq_nat_2, seq_index_1, seq_index_2
+global seq_nat_1, seq_index_1, seq_last_index_1, \
+       seq_index_2, seq_nat_2, seq_last_index_2
 
 def MacAddr2fourtyEightbits(target):
     a = target.split(':')
@@ -69,7 +70,7 @@ def set_ipv4_lpm(p4info_helper, nat, ipv4, port):
         action_name="set_nhop",
         action_params={
             "nhop_ipv4": ipv4,
-            "port": 1
+            "port": port
         })
     nat.WriteTableEntry(table_entry)
 
@@ -102,6 +103,30 @@ def set_rev_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
         action_params={
             "ipv4Addr": hostIP,
             "tcpPort": h2nPort
+        })
+    nat.WriteTableEntry(table_entry)
+
+def set_match_nat_ip(p4info_helper, nat, ipv4Dst):
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="match_nat_ip", # NAME?!
+        match_fields={
+            "ipv4.dstAddr": [ipv4Dst, 32]
+        },
+        action_name="reg",
+        action_params={
+        })
+    nat.WriteTableEntry(table_entry)
+
+def set_Src_port(p4info_helper, nat, port, index, nat_num):
+    print '[ set_Src_port ] nat%d, number = %d' % (nat_num, index)
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="SrcPort", # NAME?!
+        match_fields={
+            "p2pEst.matchSrcPortIndex": index
+        },
+        action_name="addSrcPort",
+        action_params={
+            "srcPort": port
         })
     nat.WriteTableEntry(table_entry)
 
@@ -154,12 +179,33 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
         set_ipv4_lpm(p4info_helper, nat1, '140.116.0.%d' % x, x+2)
         set_ipv4_lpm(p4info_helper, nat2, '140.116.0.%d' % x, x+2)
     
-    # TODO: forwarding 的邏輯要再看一下，因為我發現 fwd_nat_tcp 和 rev_nat_tcp 跟我想的有點不一樣
-    #       貌似會導致 dstAddr 變成 host 自己，封包根本傳不出去ＱＱＱ
-    # TODO: 順便看一下，要怎麼 trace NAT 對於封包的行為
-    #       p4 runtime?? 可是我在裡面只有看到加入 entry 的過程而已
-    # TODO: pass ALLOCATION_PORT to switch
+    # match_nat_ip
+    set_match_nat_ip(p4info_helper, nat1, '140.116.0.1')
+    set_match_nat_ip(p4info_helper, nat1, '140.116.0.2')
+    set_match_nat_ip(p4info_helper, nat2, '140.116.0.1')
+    set_match_nat_ip(p4info_helper, nat2, '140.116.0.2')
+
+    # fwd_nat_tcp
+    set_fwd_nat_tcp(p4info_helper, nat1, '10.0.1.1', 5678, '140.116.0.3', 1234)
+    set_fwd_nat_tcp(p4info_helper, nat1, '10.0.2.2', 2, '140.116.0.3', seq_nat_1[1])
+    set_fwd_nat_tcp(p4info_helper, nat2, '192.168.3.3', 1, '140.116.0.4', seq_nat_2[0])
+    set_fwd_nat_tcp(p4info_helper, nat2, '192.168.4.4', 2, '140.116.0.4', seq_nat_2[1])
+
+    # rev_nat_tcp
+    set_rev_nat_tcp(p4info_helper, nat1, '10.0.1.1', 5678, '140.116.0.3', 1234)
+    set_rev_nat_tcp(p4info_helper, nat1, '10.0.2.2', 2, '140.116.0.3', seq_nat_1[1])
+    set_rev_nat_tcp(p4info_helper, nat2, '192.168.3.3', 1, '140.116.0.4', seq_nat_2[0])
+    set_rev_nat_tcp(p4info_helper, nat2, '192.168.4.4', 2, '140.116.0.4', seq_nat_2[1])
     
+    for i in range(0, 10):
+        set_Src_port(p4info_helper, nat1, seq_nat_1[i], i, 1)
+        set_Src_port(p4info_helper, nat2, seq_nat_2[i], i, 2)
+    
+    seq_last_index_1 = 10
+    seq_last_index_2 = 10
+
+    
+    #     set_Src_port(p4info_helper, nat2, i, seq_nat_2[i], 2)
 
 
 def main(p4info_file_path, bmv2_file_path):

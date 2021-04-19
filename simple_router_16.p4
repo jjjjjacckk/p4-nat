@@ -84,6 +84,17 @@ header udp_t {
     bit<16> checksum;
 }
 
+header p2pEst_t {
+    bit<32> p2pOthersideIP;     // direction = 0 -> this value is 0
+    bit<32> p2pOthersidePort;   // direction = 0 -> this value is 0
+    bit<16> candidatePort;      // store candidate port
+    bit<16> matchSrcPortIndex;  // store index for matching candidate port
+    bit<1>  direction;          // transmittion direction of packet
+                                // 1. to server = 0, build connection
+                                // 2. to host   = 1, return information from server
+    bit<7>  isEstPacket;        // 0 = is normal packet; 1 = packet for establish connection
+}
+
 struct metadata {
     @name(".l3_metadata") 
     l3_metadata_t      l3_metadata;
@@ -94,6 +105,8 @@ struct metadata {
 }
 
 struct headers {
+    @name(".p2pEst")
+    p2pEst_t   p2pEst;
     @name(".ethernet") 
     ethernet_t ethernet;
     @name(".ipv4") 
@@ -105,6 +118,9 @@ struct headers {
 }
 
 parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
+    @name(".start") state start {
+        transition parse_ethernet;
+    }
     @name(".parse_ethernet") state parse_ethernet {
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
@@ -125,16 +141,17 @@ parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout 
         packet.extract(hdr.tcp);
         meta.l3_metadata.lkp_outer_l4_sport = hdr.tcp.srcPort;
         meta.l3_metadata.lkp_outer_l4_dport = hdr.tcp.dstPort;
-        transition accept;
+        transition parse_p2pEst;
     }
     @name(".parse_udp") state parse_udp {
         packet.extract(hdr.udp);
         meta.l3_metadata.lkp_outer_l4_sport = hdr.udp.srcPort;
         meta.l3_metadata.lkp_outer_l4_dport = hdr.udp.dstPort;
-        transition accept;
+        transition parse_p2pEst;
     }
-    @name(".start") state start {
-        transition parse_ethernet;
+    @name(".parse_p2pEst") state parse_p2pEst {
+        packet.extract(hdr.p2pEst);
+        transition accept;
     }
 }
 
@@ -186,6 +203,8 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
 }
 
 control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
+    register<bit<16>>(1) src_index;
+
     @name(".set_dmac") action set_dmac(bit<48> dmac) {
         hdr.ethernet.dstAddr = dmac;
     }
@@ -204,6 +223,24 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         hdr.ipv4.dstAddr = ipv4Addr;
         hdr.tcp.dstPort = tcpPort;
         meta.meta.natReverse = 1w1;
+    }
+    @name(".addCandidatePort") action addCandidatePort(bit<16> CandidatePort) {
+        hdr.p2pEst.candidatePort = CandidatePort;
+    }
+    @name(".set_CandidatePortIndex") action set_CandidatePortIndex() {
+        src_index.read(hdr.p2pEst.matchSrcPortIndex, 0);
+        src_index.write(0, hdr.p2pEst.matchSrcPortIndex+1);
+    }
+    @name(".CandidatePort") table CandidatePort {
+        actions = {
+            addCandidatePort;
+            NoAction;
+        }
+        key = {
+            hdr.p2pEst.matchSrcPortIndex: exact;
+        }
+        size = 12;      // size of table entry = store 10 candidate port
+        default_action = NoAction();
     }
     @name(".forward") table forward {
         actions = {
@@ -231,6 +268,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         }
         key = {
             hdr.ipv4.dstAddr: lpm;
+            hdr.tcp.dstAddr: exact;
         }
     }
     @name(".rev_nat_tcp") table rev_nat_tcp {
@@ -247,6 +285,11 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     apply {
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
             if (hdr.tcp.isValid()) {
+                if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 7w1) {
+                    // insert candidate port information 
+                    set_CandidatePortIndex();
+                    CandidatePort.apply();
+                }
                 if (match_nat_ip.apply().hit) {
                     rev_nat_tcp.apply();
                 }

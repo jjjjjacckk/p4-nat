@@ -103,7 +103,31 @@ class ExerciseTopo(Topo):
             host_ip = hosts[host_name]['ip']
             host_mac = hosts[host_name]['mac']
             self.addHost(host_name, ip=host_ip, mac=host_mac)
-            self.addLink(host_name, sw_name,
+
+            # self.addLink(host_name, sw_name,
+            #              delay=link['latency'], bw=link['bandwidth'],
+            #              port2=sw_port)
+
+            if host_name == 'server1':
+                if sw_name == 'nat1':
+                    self.addLink(host_name, sw_name,
+                                delay=link['latency'], bw=link['bandwidth'],
+                                port2=sw_port, port1=3333)
+                else:
+                    self.addLink(host_name, sw_name,
+                                delay=link['latency'], bw=link['bandwidth'],
+                                port2=sw_port, port1=3334)
+            elif host_name == 'server2':
+                if sw_name == 'nat1':
+                    self.addLink(host_name, sw_name,
+                                delay=link['latency'], bw=link['bandwidth'],
+                                port2= sw_port, port1=5555)
+                else:
+                    self.addLink(host_name, sw_name,
+                                delay=link['latency'], bw=link['bandwidth'],
+                                port2=sw_port, port1=5556)
+            else:
+                self.addLink(host_name, sw_name,
                          delay=link['latency'], bw=link['bandwidth'],
                          port2=sw_port)
 

@@ -3,6 +3,26 @@ pkg_info {
 }
 tables {
   preamble {
+    id: 33617024
+    name: "SrcPort"
+    alias: "SrcPort"
+  }
+  match_fields {
+    id: 1
+    name: "p2pEst.matchSrcPortIndex"
+    bitwidth: 16
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16816174
+  }
+  action_refs {
+    id: 16800567
+  }
+  size: 65536
+}
+tables {
+  preamble {
     id: 33589124
     name: "forward"
     alias: "forward"
@@ -229,6 +249,25 @@ actions {
 }
 actions {
   preamble {
+    id: 16816174
+    name: "addSrcPort"
+    alias: "addSrcPort"
+  }
+  params {
+    id: 1
+    name: "srcPort"
+    bitwidth: 16
+  }
+}
+actions {
+  preamble {
+    id: 16826902
+    name: "set_index"
+    alias: "set_index"
+  }
+}
+actions {
+  preamble {
     id: 16779100
     name: "rewrite_srcAddrTCP"
     alias: "rewrite_srcAddrTCP"
@@ -262,6 +301,21 @@ actions {
     name: "smac"
     bitwidth: 48
   }
+}
+registers {
+  preamble {
+    id: 369126790
+    name: "MyIngress.src_index"
+    alias: "src_index"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 16
+      }
+    }
+  }
+  size: 1
 }
 type_info {
 }

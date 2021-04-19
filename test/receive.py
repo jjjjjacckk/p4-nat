@@ -6,7 +6,7 @@ import os
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
 from scapy.all import Packet, IPOption
 from scapy.all import ShortField, IntField, LongField, BitField, FieldListField, FieldLenField
-from scapy.all import IP, TCP, UDP, Raw
+from scapy.all import IP, TCP, UDP, Raw, ICMP
 from scapy.layers.inet import _IPOption_HDR
 
 def get_if():
@@ -34,11 +34,14 @@ class IPOption_MRI(IPOption):
                                    IntField("", 0),
                                    length_from=lambda pkt:pkt.count*4) ]
 def handle_pkt(pkt):
-    if TCP in pkt and pkt[TCP].dport == 1234:
+    # if TCP in pkt and pkt[TCP].dport == 1234:
+    if TCP in pkt:
         print "got a packet"
         pkt.show2()
     #    hexdump(pkt)
         sys.stdout.flush()
+    elif ICMP in pkt:
+        pkt.show2()
 
 
 def main():
