@@ -156,9 +156,34 @@ parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout 
 }
 
 control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
-    @name(".rewrite_srcAddrTCP") action rewrite_srcAddrTCP(bit<32> ipv4Addr, bit<16> port) {
+    register<bit<16>>(1) src_index;
+
+    @name(".addCandidatePort") action addCandidatePort(bit<16> CandidatePort) {
+        hdr.p2pEst.candidatePort = CandidatePort;
+    }
+    @name(".set_CandidatePortIndex") action set_CandidatePortIndex() {
+        src_index.read(hdr.p2pEst.matchSrcPortIndex, 0);
+        src_index.write(0, hdr.p2pEst.matchSrcPortIndex+1);
+    }
+    @name(".CandidatePort") table CandidatePort {
+        actions = {
+            addCandidatePort;
+            NoAction;
+        }
+        key = {
+            hdr.p2pEst.matchSrcPortIndex: exact;
+        }
+        size = 12;      // size of table entry = store 10 candidate port
+        default_action = NoAction();
+    }
+    @name("._DIGEST") action _DIGEST() {
+        // TODO: Digest info to controller to add new EgressTaleEntry
+        // TODO: send info to controller
+    }
+
+    @name(".rewrite_srcAddrUDP") action rewrite_srcAddrUDP(bit<32> ipv4Addr, bit<16> port) {
         hdr.ipv4.srcAddr = ipv4Addr;
-        hdr.tcp.srcPort = port;
+        hdr.udp.srcPort = port;
         meta.meta.natForward = 1w1;
     }
     @name(".send_to_cpu") action send_to_cpu() {
@@ -173,9 +198,18 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
     @name("._drop") action _drop() {
         mark_to_drop(standard_metadata);
     }
+    @name(".match_egress_nat_ip") table match_egress_nat_ip {
+        actions = {
+            rewrite_srcAddrUDP;
+        }
+        key = {
+            hdr.ipv4.dstAddr: exact;
+            hdr.udp.srcPort: exact;
+        }
+    }
     @name(".fwd_nat_tcp") table fwd_nat_tcp {
         actions = {
-            rewrite_srcAddrTCP;
+            rewrite_srcAddrUDP;
             send_to_cpu;
         }
         key = {
@@ -195,16 +229,21 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
         size = 256;
     }
     apply {
-        if (hdr.tcp.isValid() && meta.meta.natForward == 1w0) {
-            fwd_nat_tcp.apply();
+        if (hdr.udp.isValid()) {
+            if (match_egress_nat_ip.apply().hit == false) {
+                if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 7w1) {
+                    // insert candidate port information 
+                    set_CandidatePortIndex();
+                    CandidatePort.apply();
+                }
+                _DIGEST();
+            }
         }
         send_frame.apply();
     }
 }
 
 control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
-    register<bit<16>>(1) src_index;
-
     @name(".set_dmac") action set_dmac(bit<48> dmac) {
         hdr.ethernet.dstAddr = dmac;
     }
@@ -219,29 +258,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     @name(".reg") action reg() {
         standard_metadata.egress_spec = 9w1;
     }
-    @name(".rewrite_dstAddrTCP") action rewrite_dstAddrTCP(bit<32> ipv4Addr, bit<16> tcpPort) {
+    @name(".rewrite_dstAddrUDP") action rewrite_dstAddrUDP(bit<32> ipv4Addr, bit<16> udpPort) {
         hdr.ipv4.dstAddr = ipv4Addr;
-        hdr.tcp.dstPort = tcpPort;
+        hdr.udp.dstPort = udpPort;
         meta.meta.natReverse = 1w1;
     }
-    @name(".addCandidatePort") action addCandidatePort(bit<16> CandidatePort) {
-        hdr.p2pEst.candidatePort = CandidatePort;
-    }
-    @name(".set_CandidatePortIndex") action set_CandidatePortIndex() {
-        src_index.read(hdr.p2pEst.matchSrcPortIndex, 0);
-        src_index.write(0, hdr.p2pEst.matchSrcPortIndex+1);
-    }
-    @name(".CandidatePort") table CandidatePort {
-        actions = {
-            addCandidatePort;
-            NoAction;
-        }
-        key = {
-            hdr.p2pEst.matchSrcPortIndex: exact;
-        }
-        size = 12;      // size of table entry = store 10 candidate port
-        default_action = NoAction();
-    }
+   
     @name(".forward") table forward {
         actions = {
             set_dmac;
@@ -262,18 +284,18 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         }
         size = 1024;
     }
-    @name(".match_nat_ip") table match_nat_ip {
+    @name(".match_ingress_nat_ip") table match_ingress_nat_ip {
         actions = {
-            reg;
+            rewrite_dstAddrUDP;
         }
         key = {
-            hdr.ipv4.dstAddr: lpm;
-            hdr.tcp.dstAddr: exact;
+            hdr.ipv4.srcAddr: exact;
+            hdr.udp.srcPort: exact;
         }
     }
     @name(".rev_nat_tcp") table rev_nat_tcp {
         actions = {
-            rewrite_dstAddrTCP;
+            rewrite_dstAddrUDP;
             _drop;
         }
         key = {
@@ -284,15 +306,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
     apply {
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
-            if (hdr.tcp.isValid()) {
-                if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 7w1) {
-                    // insert candidate port information 
-                    set_CandidatePortIndex();
-                    CandidatePort.apply();
-                }
-                if (match_nat_ip.apply().hit) {
-                    rev_nat_tcp.apply();
-                }
+            if (hdr.udp.isValid()) {
+                if (match_ingress_nat_ip.apply().hit == false)
+                    _drop();
             }
             ipv4_lpm.apply();
             forward.apply();

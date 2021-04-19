@@ -3,26 +3,6 @@ pkg_info {
 }
 tables {
   preamble {
-    id: 33617024
-    name: "SrcPort"
-    alias: "SrcPort"
-  }
-  match_fields {
-    id: 1
-    name: "p2pEst.matchSrcPortIndex"
-    bitwidth: 16
-    match_type: EXACT
-  }
-  action_refs {
-    id: 16816174
-  }
-  action_refs {
-    id: 16800567
-  }
-  size: 65536
-}
-tables {
-  preamble {
     id: 33589124
     name: "forward"
     alias: "forward"
@@ -73,18 +53,24 @@ tables {
 }
 tables {
   preamble {
-    id: 33558829
-    name: "match_nat_ip"
-    alias: "match_nat_ip"
+    id: 33610441
+    name: "match_ingress_nat_ip"
+    alias: "match_ingress_nat_ip"
   }
   match_fields {
     id: 1
-    name: "ipv4.dstAddr"
+    name: "ipv4.srcAddr"
     bitwidth: 32
-    match_type: LPM
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "udp.srcPort"
+    bitwidth: 16
+    match_type: EXACT
   }
   action_refs {
-    id: 16809146
+    id: 16784528
   }
   action_refs {
     id: 16800567
@@ -95,9 +81,29 @@ tables {
 }
 tables {
   preamble {
-    id: 33561736
-    name: "rev_nat_tcp"
-    alias: "rev_nat_tcp"
+    id: 33576921
+    name: "CandidatePort"
+    alias: "CandidatePort"
+  }
+  match_fields {
+    id: 1
+    name: "p2pEst.matchSrcPortIndex"
+    bitwidth: 16
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16823885
+  }
+  action_refs {
+    id: 16800567
+  }
+  size: 12
+}
+tables {
+  preamble {
+    id: 33591694
+    name: "match_egress_nat_ip"
+    alias: "match_egress_nat_ip"
   }
   match_fields {
     id: 1
@@ -107,53 +113,19 @@ tables {
   }
   match_fields {
     id: 2
-    name: "tcp.dstPort"
+    name: "udp.srcPort"
     bitwidth: 16
     match_type: EXACT
   }
   action_refs {
-    id: 16823175
-  }
-  action_refs {
-    id: 16784184
+    id: 16817081
   }
   action_refs {
     id: 16800567
     annotations: "@defaultonly"
     scope: DEFAULT_ONLY
   }
-  size: 32768
-}
-tables {
-  preamble {
-    id: 33609950
-    name: "fwd_nat_tcp"
-    alias: "fwd_nat_tcp"
-  }
-  match_fields {
-    id: 1
-    name: "ipv4.srcAddr"
-    bitwidth: 32
-    match_type: EXACT
-  }
-  match_fields {
-    id: 2
-    name: "tcp.srcPort"
-    bitwidth: 16
-    match_type: EXACT
-  }
-  action_refs {
-    id: 16779100
-  }
-  action_refs {
-    id: 16829080
-  }
-  action_refs {
-    id: 16800567
-    annotations: "@defaultonly"
-    scope: DEFAULT_ONLY
-  }
-  size: 32768
+  size: 1024
 }
 tables {
   preamble {
@@ -225,16 +197,9 @@ actions {
 }
 actions {
   preamble {
-    id: 16809146
-    name: "reg"
-    alias: "reg"
-  }
-}
-actions {
-  preamble {
-    id: 16823175
-    name: "rewrite_dstAddrTCP"
-    alias: "rewrite_dstAddrTCP"
+    id: 16784528
+    name: "rewrite_dstAddrUDP"
+    alias: "rewrite_dstAddrUDP"
   }
   params {
     id: 1
@@ -243,34 +208,41 @@ actions {
   }
   params {
     id: 2
-    name: "tcpPort"
+    name: "udpPort"
     bitwidth: 16
   }
 }
 actions {
   preamble {
-    id: 16816174
-    name: "addSrcPort"
-    alias: "addSrcPort"
+    id: 16823885
+    name: "addCandidatePort"
+    alias: "addCandidatePort"
   }
   params {
     id: 1
-    name: "srcPort"
+    name: "CandidatePort"
     bitwidth: 16
   }
 }
 actions {
   preamble {
-    id: 16826902
-    name: "set_index"
-    alias: "set_index"
+    id: 16813982
+    name: "set_CandidatePortIndex"
+    alias: "set_CandidatePortIndex"
   }
 }
 actions {
   preamble {
-    id: 16779100
-    name: "rewrite_srcAddrTCP"
-    alias: "rewrite_srcAddrTCP"
+    id: 16808657
+    name: "_DIGEST"
+    alias: "_DIGEST"
+  }
+}
+actions {
+  preamble {
+    id: 16817081
+    name: "rewrite_srcAddrUDP"
+    alias: "rewrite_srcAddrUDP"
   }
   params {
     id: 1
@@ -281,13 +253,6 @@ actions {
     id: 2
     name: "port"
     bitwidth: 16
-  }
-}
-actions {
-  preamble {
-    id: 16829080
-    name: "send_to_cpu"
-    alias: "send_to_cpu"
   }
 }
 actions {
@@ -304,8 +269,8 @@ actions {
 }
 registers {
   preamble {
-    id: 369126790
-    name: "MyIngress.src_index"
+    id: 369103150
+    name: "MyEgress.src_index"
     alias: "src_index"
   }
   type_spec {
