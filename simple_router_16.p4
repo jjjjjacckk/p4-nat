@@ -87,7 +87,7 @@ header udp_t {
 header p2pEst_t {
     bit<32> p2pOthersideIP;     // direction = 0 -> this value is 0
     bit<32> p2pOthersidePort;   // direction = 0 -> this value is 0
-    bit<16> candidatePort;      // store candidate port
+    bit<16> candidatePort;      // store candidate port (self)
     bit<16> matchSrcPortIndex;  // store index for matching candidate port
     bit<1>  direction;          // transmittion direction of packet
                                 // 1. to server = 0, build connection
@@ -115,6 +115,13 @@ struct headers {
     tcp_t      tcp;
     @name(".udp") 
     udp_t      udp;
+}
+
+struct CandidatePortDigest {
+    bit<32> othersideIP;
+    bit<16> othersidePort;
+    bit<32> hostIP;
+    bit<16> hostPort;
 }
 
 parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
@@ -176,9 +183,13 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
         size = 12;      // size of table entry = store 10 candidate port
         default_action = NoAction();
     }
-    @name("._DIGEST") action _DIGEST() {
-        // TODO: Digest info to controller to add new EgressTaleEntry
-        // TODO: send info to controller
+    @name("._DIGEST_Egress") action _DIGEST_Egress() {
+        // Digest info to controller to add new EgressTaleEntry
+        // Digest = send info to controller
+        digest<CandidatePortDigest>( (bit<32>)1024, { hdr.ipv4.dstAddr,
+                                                      hdr.udp.dstPort,
+                                                      hdr.ipv4.sourceAddr,
+                                                      hdr.p2pEst.candidatePort});
     }
 
     @name(".rewrite_srcAddrUDP") action rewrite_srcAddrUDP(bit<32> ipv4Addr, bit<16> port) {
@@ -204,7 +215,7 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
         }
         key = {
             hdr.ipv4.dstAddr: exact;
-            hdr.udp.srcPort: exact;
+            hdr.udp.dstPort: exact;
         }
     }
     @name(".fwd_nat_tcp") table fwd_nat_tcp {
@@ -236,7 +247,8 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
                     set_CandidatePortIndex();
                     CandidatePort.apply();
                 }
-                _DIGEST();
+                _DIGEST_Egress();          // send port informations to controller to add NAT table entry
+                match_egress_nat_ip.apply();    // to evoke "rewrite_srcAddrUDP()"
             }
         }
         send_frame.apply();
@@ -263,7 +275,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         hdr.udp.dstPort = udpPort;
         meta.meta.natReverse = 1w1;
     }
-   
+    @name("_DIGEST_Ingress") action _DIGEST_Ingress() {
+        digest<CandidatePortDigest>( (bit<32>)1024, { hdr.p2pEst.p2pOthersideIP, 
+                                                      hdr.p2pEst.p2pOthersidePort, 
+                                                      hdr.ipv4.dstAddr,
+                                                      hdr.p2pEst.CandidatePort });
+    }
     @name(".forward") table forward {
         actions = {
             set_dmac;
@@ -304,11 +321,29 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         }
         size = 32768;
     }
+    @name(".check_if_from_host") table check_if_from_host {
+        actions = {
+            _drop;
+            NoAction;
+        }
+        key = {
+            hdr.ipv4.srcAddr: exact;
+        }
+        size = 1024;
+        default_action = _drop();       // miss = drop the packet
+    }
     apply {
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
             if (hdr.udp.isValid()) {
-                if (match_ingress_nat_ip.apply().hit == false)
-                    _drop();
+                if (match_ingress_nat_ip.apply().hit == false) {
+                    // if the packet is from the server, mark the packet as drop
+                    if (hdr.p2pEst.direction == 1w1)
+                        _drop();
+                } else {
+                    // return from server of Establish P2P connection
+                    if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 7w1) 
+                        _DIGEST_Ingress();
+                }
             }
             ipv4_lpm.apply();
             forward.apply();
