@@ -8,6 +8,34 @@ import struct
 from scapy.all import sendp, send, get_if_list, get_if_hwaddr
 from scapy.all import Packet
 from scapy.all import Ether, IP, UDP, TCP
+from scapy.fields import BitField, IntField, ShortField, IPField
+
+'''
+header p2pEst_t {
+    bit<32> p2pOthersideIP;     // direction = 0 -> this value is 0
+    bit<32> p2pOthersidePort;   // direction = 0 -> this value is 0
+    bit<32> selfNATIP;          // self NAT IP (will get this after egress NAT translation: host -> server period)
+    bit<16> candidatePort;      // store candidate port (self)
+    bit<16> matchSrcPortIndex;  // store index for matching candidate port
+    bit<1>  direction;          // transmittion direction of packet
+                                // 1. to server = 0, build connection
+                                // 2. to host   = 1, return information from server
+    bit<7>  isEstPacket;        // 0 = is normal packet; 1 = packet for establish connection
+}
+'''
+
+class p2pEst(Packet):
+    name = 'p2pEst'
+    fields_desc = [
+        IPField("p2pOthersideIP", "0.0.0.0"),
+        ShortField("p2pOthersidePort", 0),
+        IPField("selfNATIP", "0.0.0.0"),
+        ShortField("candidatePort", 0),
+        ShortField("matchSrcPortIndex", 0),
+        BitField("direction", 0, 1),
+        BitField("whom2Connect", 0, 11),
+        BitField("isEstPacket", 0, 4),
+    ]
 
 def get_if():
     ifs=get_if_list()
@@ -31,15 +59,17 @@ def main():
     #iface = get_if()
     iface = sys.argv[3]
 
-    dPort = int(sys.argv[4])
-    print '[ send.py ] ', sys.argv[4], ' ', type(sys.argv[4]), ' ', int(dPort)
+
 
 
     print "sending on interface %s to %s" % (iface, str(addr))
+    # print 'get_if_hwaddr(iface) ', get_if_hwaddr('eth0')
     pkt =  Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
+
     # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
-    pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=5678) / sys.argv[2]
-    pkt.show2()
+    pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
+    # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst() / sys.argv[2]
+    pkt.show()
     sendp(pkt, iface=iface, verbose=False)
 
 
