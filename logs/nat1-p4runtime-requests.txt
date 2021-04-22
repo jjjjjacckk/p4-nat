@@ -1,10 +1,10 @@
 
-[2021-04-18 18:24:00.739] /p4.v1.P4Runtime/SetForwardingPipelineConfig
+[2021-04-22 10:56:29.702] /p4.v1.P4Runtime/SetForwardingPipelineConfig
 ---
-Message too long (63209 bytes)! Skipping log...
+Message too long (80296 bytes)! Skipping log...
 ---
 
-[2021-04-18 18:24:00.795] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.731] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -34,7 +34,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.797] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.734] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -64,7 +64,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.799] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.738] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -94,7 +94,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.801] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.739] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -124,7 +124,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.812] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.747] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -154,7 +154,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.815] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.750] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -184,67 +184,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.819] /p4.v1.P4Runtime/Write
----
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33589124
-      match {
-        field_id: 1
-        exact {
-          value: "\n\000\003\003"
-        }
-      }
-      action {
-        action {
-          action_id: 16780303
-          params {
-            param_id: 1
-            value: "\010\000\000\000\0033"
-          }
-        }
-      }
-    }
-  }
-}
----
-
-[2021-04-18 18:24:00.821] /p4.v1.P4Runtime/Write
----
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33589124
-      match {
-        field_id: 1
-        exact {
-          value: "\n\000\004\004"
-        }
-      }
-      action {
-        action {
-          action_id: 16780303
-          params {
-            param_id: 1
-            value: "\010\000\000\000\004D"
-          }
-        }
-      }
-    }
-  }
-}
----
-
-[2021-04-18 18:24:00.824] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.752] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -274,7 +214,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.827] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.755] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -304,7 +244,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.830] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.758] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -339,7 +279,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.833] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.761] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -374,7 +314,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.836] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.763] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -409,7 +349,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.841] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.769] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -444,7 +384,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.846] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.772] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -453,164 +393,30 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33558829
+      table_id: 33610441
       match {
         field_id: 1
-        lpm {
+        exact {
           value: "\214t\000\001"
-          prefix_len: 32
-        }
-      }
-      action {
-        action {
-          action_id: 16809146
-        }
-      }
-    }
-  }
-}
----
-
-[2021-04-18 18:24:00.848] /p4.v1.P4Runtime/Write
----
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33558829
-      match {
-        field_id: 1
-        lpm {
-          value: "\214t\000\002"
-          prefix_len: 32
-        }
-      }
-      action {
-        action {
-          action_id: 16809146
-        }
-      }
-    }
-  }
-}
----
-
-[2021-04-18 18:24:00.852] /p4.v1.P4Runtime/Write
----
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33609950
-      match {
-        field_id: 1
-        exact {
-          value: "\n\000\001\001"
         }
       }
       match {
         field_id: 2
         exact {
-          value: "\026."
+          value: "\004W"
         }
       }
       action {
         action {
-          action_id: 16779100
-          params {
-            param_id: 1
-            value: "\214t\000\003"
-          }
+          action_id: 16784528
           params {
             param_id: 2
-            value: "\004\322"
+            value: "+g"
           }
-        }
-      }
-    }
-  }
-}
----
-
-[2021-04-18 18:24:00.855] /p4.v1.P4Runtime/Write
----
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33609950
-      match {
-        field_id: 1
-        exact {
-          value: "\n\000\002\002"
-        }
-      }
-      match {
-        field_id: 2
-        exact {
-          value: "\000\002"
-        }
-      }
-      action {
-        action {
-          action_id: 16779100
-          params {
-            param_id: 1
-            value: "\214t\000\003"
-          }
-          params {
-            param_id: 2
-            value: "\213\201"
-          }
-        }
-      }
-    }
-  }
-}
----
-
-[2021-04-18 18:24:00.860] /p4.v1.P4Runtime/Write
----
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33561736
-      match {
-        field_id: 1
-        exact {
-          value: "\214t\000\003"
-        }
-      }
-      match {
-        field_id: 2
-        exact {
-          value: "\004\322"
-        }
-      }
-      action {
-        action {
-          action_id: 16823175
           params {
             param_id: 1
             value: "\n\000\001\001"
           }
-          params {
-            param_id: 2
-            value: "\026."
-          }
         }
       }
     }
@@ -618,7 +424,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.861] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.773] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -627,29 +433,69 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33561736
+      table_id: 33610441
       match {
         field_id: 1
         exact {
-          value: "\214t\000\003"
+          value: "\214t\000\001"
         }
       }
       match {
         field_id: 2
         exact {
-          value: "\213\201"
+          value: "\010\256"
         }
       }
       action {
         action {
-          action_id: 16823175
+          action_id: 16784528
+          params {
+            param_id: 2
+            value: "+g"
+          }
           params {
             param_id: 1
             value: "\n\000\002\002"
           }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.775] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33610441
+      match {
+        field_id: 1
+        exact {
+          value: "\214t\000\002"
+        }
+      }
+      match {
+        field_id: 2
+        exact {
+          value: "\004W"
+        }
+      }
+      action {
+        action {
+          action_id: 16784528
           params {
             param_id: 2
-            value: "\000\002"
+            value: "V\316"
+          }
+          params {
+            param_id: 1
+            value: "\n\000\001\001"
           }
         }
       }
@@ -658,7 +504,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.866] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.776] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -667,19 +513,29 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33610441
       match {
         field_id: 1
         exact {
-          value: "\000\000"
+          value: "\214t\000\002"
+        }
+      }
+      match {
+        field_id: 2
+        exact {
+          value: "\010\256"
         }
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16784528
+          params {
+            param_id: 2
+            value: "V\316"
+          }
           params {
             param_id: 1
-            value: "Pn"
+            value: "\n\000\002\002"
           }
         }
       }
@@ -688,7 +544,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.871] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.784] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -697,19 +553,29 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33591694
+      match {
+        field_id: 2
+        exact {
+          value: "\004W"
+        }
+      }
       match {
         field_id: 1
         exact {
-          value: "\000\001"
+          value: "\214t\000\001"
         }
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16817081
+          params {
+            param_id: 2
+            value: "\321\000"
+          }
           params {
             param_id: 1
-            value: "\213\201"
+            value: "\214t\000\003"
           }
         }
       }
@@ -718,7 +584,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.873] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.786] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -727,19 +593,29 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33591694
+      match {
+        field_id: 2
+        exact {
+          value: "\010\256"
+        }
+      }
       match {
         field_id: 1
         exact {
-          value: "\000\002"
+          value: "\214t\000\001"
         }
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16817081
+          params {
+            param_id: 2
+            value: "J\321"
+          }
           params {
             param_id: 1
-            value: "\237\332"
+            value: "\214t\000\003"
           }
         }
       }
@@ -748,7 +624,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.877] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.787] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -757,19 +633,29 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33591694
+      match {
+        field_id: 2
+        exact {
+          value: "\004W"
+        }
+      }
       match {
         field_id: 1
         exact {
-          value: "\000\003"
+          value: "\214t\000\002"
         }
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16817081
+          params {
+            param_id: 2
+            value: "\351\200"
+          }
           params {
             param_id: 1
-            value: "um"
+            value: "\214t\000\003"
           }
         }
       }
@@ -778,7 +664,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.880] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.789] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -787,7 +673,47 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33591694
+      match {
+        field_id: 2
+        exact {
+          value: "\010\256"
+        }
+      }
+      match {
+        field_id: 1
+        exact {
+          value: "\214t\000\002"
+        }
+      }
+      action {
+        action {
+          action_id: 16817081
+          params {
+            param_id: 2
+            value: "\203x"
+          }
+          params {
+            param_id: 1
+            value: "\214t\000\003"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.800] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33576921
       match {
         field_id: 1
         exact {
@@ -796,10 +722,10 @@ updates {
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16823885
           params {
             param_id: 1
-            value: "\3652"
+            value: "\346\261"
           }
         }
       }
@@ -808,7 +734,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.883] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.803] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -817,7 +743,7 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33576921
       match {
         field_id: 1
         exact {
@@ -826,10 +752,10 @@ updates {
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16823885
           params {
             param_id: 1
-            value: "\326`"
+            value: "?X"
           }
         }
       }
@@ -838,7 +764,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.887] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.805] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -847,7 +773,7 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33576921
       match {
         field_id: 1
         exact {
@@ -856,10 +782,10 @@ updates {
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16823885
           params {
             param_id: 1
-            value: "y\000"
+            value: "\364\213"
           }
         }
       }
@@ -868,7 +794,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.890] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.808] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -877,7 +803,7 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33576921
       match {
         field_id: 1
         exact {
@@ -886,10 +812,10 @@ updates {
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16823885
           params {
             param_id: 1
-            value: "oU"
+            value: "h\373"
           }
         }
       }
@@ -898,7 +824,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.892] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.811] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -907,7 +833,7 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33576921
       match {
         field_id: 1
         exact {
@@ -916,10 +842,10 @@ updates {
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16823885
           params {
             param_id: 1
-            value: "\323\006"
+            value: "\020`"
           }
         }
       }
@@ -928,7 +854,7 @@ updates {
 }
 ---
 
-[2021-04-18 18:24:00.895] /p4.v1.P4Runtime/Write
+[2021-04-22 10:56:29.814] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -937,7 +863,7 @@ updates {
   type: INSERT
   entity {
     table_entry {
-      table_id: 33617024
+      table_id: 33576921
       match {
         field_id: 1
         exact {
@@ -946,10 +872,160 @@ updates {
       }
       action {
         action {
-          action_id: 16816174
+          action_id: 16823885
           params {
             param_id: 1
-            value: ",+"
+            value: "oB"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.816] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33576921
+      match {
+        field_id: 1
+        exact {
+          value: "\000\n"
+        }
+      }
+      action {
+        action {
+          action_id: 16823885
+          params {
+            param_id: 1
+            value: "\023O"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.819] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33576921
+      match {
+        field_id: 1
+        exact {
+          value: "\000\013"
+        }
+      }
+      action {
+        action {
+          action_id: 16823885
+          params {
+            param_id: 1
+            value: "\317\336"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.821] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33576921
+      match {
+        field_id: 1
+        exact {
+          value: "\000\014"
+        }
+      }
+      action {
+        action {
+          action_id: 16823885
+          params {
+            param_id: 1
+            value: "\237."
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.824] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33576921
+      match {
+        field_id: 1
+        exact {
+          value: "\000\r"
+        }
+      }
+      action {
+        action {
+          action_id: 16823885
+          params {
+            param_id: 1
+            value: "\303\003"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-22 10:56:29.829] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33576921
+      match {
+        field_id: 1
+        exact {
+          value: "\000\016"
+        }
+      }
+      action {
+        action {
+          action_id: 16823885
+          params {
+            param_id: 1
+            value: "\220\007"
           }
         }
       }

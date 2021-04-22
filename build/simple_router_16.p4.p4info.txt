@@ -113,7 +113,7 @@ tables {
   }
   match_fields {
     id: 2
-    name: "udp.srcPort"
+    name: "udp.dstPort"
     bitwidth: 16
     match_type: EXACT
   }
@@ -214,6 +214,13 @@ actions {
 }
 actions {
   preamble {
+    id: 16793851
+    name: "MyIngress._DIGEST_Ingress"
+    alias: "_DIGEST_Ingress"
+  }
+}
+actions {
+  preamble {
     id: 16823885
     name: "addCandidatePort"
     alias: "addCandidatePort"
@@ -233,13 +240,6 @@ actions {
 }
 actions {
   preamble {
-    id: 16808657
-    name: "_DIGEST"
-    alias: "_DIGEST"
-  }
-}
-actions {
-  preamble {
     id: 16817081
     name: "rewrite_srcAddrUDP"
     alias: "rewrite_srcAddrUDP"
@@ -251,7 +251,7 @@ actions {
   }
   params {
     id: 2
-    name: "port"
+    name: "udpPort"
     bitwidth: 16
   }
 }
@@ -282,5 +282,82 @@ registers {
   }
   size: 1
 }
+digests {
+  preamble {
+    id: 385887795
+    name: "CandidatePortDigest"
+    alias: "CandidatePortDigest"
+  }
+  type_spec {
+    struct {
+      name: "CandidatePortDigest"
+    }
+  }
+}
 type_info {
+  structs {
+    key: "CandidatePortDigest"
+    value {
+      members {
+        name: "othersideIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "othersidePort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "hostIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "hostPort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "NATIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "NATPort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+    }
+  }
 }

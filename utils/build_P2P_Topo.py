@@ -112,20 +112,20 @@ class ExerciseTopo(Topo):
                 if sw_name == 'nat1':
                     self.addLink(host_name, sw_name,
                                 delay=link['latency'], bw=link['bandwidth'],
-                                port2=sw_port, port1=3333)
-                else:
+                                port2=sw_port)
+                elif sw_name == 'nat2':
                     self.addLink(host_name, sw_name,
                                 delay=link['latency'], bw=link['bandwidth'],
-                                port2=sw_port, port1=3334)
+                                port2=sw_port)
             elif host_name == 'server2':
                 if sw_name == 'nat1':
                     self.addLink(host_name, sw_name,
                                 delay=link['latency'], bw=link['bandwidth'],
-                                port2= sw_port, port1=5555)
-                else:
+                                port2= sw_port)
+                elif sw_name == 'nat2':
                     self.addLink(host_name, sw_name,
                                 delay=link['latency'], bw=link['bandwidth'],
-                                port2=sw_port, port1=5556)
+                                port2=sw_port)
             else:
                 self.addLink(host_name, sw_name,
                          delay=link['latency'], bw=link['bandwidth'],

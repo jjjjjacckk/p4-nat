@@ -33,21 +33,21 @@ def WriteNATRule(p4info_helper, NATNumber):
 
 def set_send_frame(p4info_helper, nat, port, gateway):
     table_entry = p4info_helper.buildTableEntry(
-        table_name="send_frame", # NAME?!
+        table_name="send_frame",
         match_fields={
             "standard_metadata.egress_port": port # bit = 32?
         },
         action_name="rewrite_mac",
         action_params={
-            # "smac": "08:00:00:00:00:%02d:00" % gateway,
-            "smac": "08:00:00:00:%02d:00" % gateway,
+            # "smac": "08:00:00:00:%02d:00" % gateway,
+            "smac": gateway
         })
     nat.WriteTableEntry(table_entry)
 
 def set_forward(p4info_helper, nat, ipv4, number):
     print '[ set_forward ] ', ipv4, ' ', number
     table_entry = p4info_helper.buildTableEntry(
-        table_name="forward", # NAME?!
+        table_name="forward",
         match_fields={
             "routing_metadata.nhop_ipv4": ipv4
         },
@@ -63,7 +63,7 @@ def set_ipv4_lpm(p4info_helper, nat, ipv4, port):
     #   - table_add ipv4_lpm set_nhop 140.116.0.2/32 => 140.116.0.2 4
     print '[ set_ipv4_lpm ]', ipv4, ' ', port
     table_entry = p4info_helper.buildTableEntry(
-        table_name="ipv4_lpm", # NAME?!
+        table_name="ipv4_lpm",
         match_fields={
             "ipv4.dstAddr": [ipv4, 32],
         },
@@ -78,7 +78,7 @@ def set_fwd_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
     # - table_add fwd_nat_tcp rewrite_srcAddrTCP HOST_IP HOST2NAT_PORT => NAT_IP ALLOCATE_PORT
     print '[ set_fwd_nat_tcp ] ', hostIP, ' ', h2nPort, ' ', NATIP, ' ', allocatePort
     table_entry = p4info_helper.buildTableEntry(
-        table_name="fwd_nat_tcp", # NAME?!
+        table_name="fwd_nat_tcp",
         match_fields={
             "ipv4.srcAddr": hostIP,
             "tcp.srcPort": h2nPort
@@ -94,7 +94,7 @@ def set_rev_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
     # - table_add fwd_nat_tcp rewrite_srcAddrTCP HOST_IP HOST2NAT_PORT => NAT_IP ALLOCATE_PORT
     print '[ set_rev_nat_tcp ] ', hostIP, ' ', h2nPort, ' ', NATIP, ' ', allocatePort
     table_entry = p4info_helper.buildTableEntry(
-        table_name="rev_nat_tcp", # NAME?!
+        table_name="rev_nat_tcp",
         match_fields={
             "ipv4.dstAddr": NATIP,
             "tcp.dstPort": allocatePort
@@ -108,7 +108,7 @@ def set_rev_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
 
 def set_match_nat_ip(p4info_helper, nat, ipv4Dst):
     table_entry = p4info_helper.buildTableEntry(
-        table_name="match_nat_ip", # NAME?!
+        table_name="match_nat_ip",
         match_fields={
             "ipv4.dstAddr": [ipv4Dst, 32]
         },
@@ -117,16 +117,46 @@ def set_match_nat_ip(p4info_helper, nat, ipv4Dst):
         })
     nat.WriteTableEntry(table_entry)
 
-def set_Src_port(p4info_helper, nat, port, index, nat_num):
+def set_CandidatePort(p4info_helper, nat, index, port, nat_num):
     print '[ set_Src_port ] nat%d, number = %d' % (nat_num, index)
     table_entry = p4info_helper.buildTableEntry(
-        table_name="SrcPort", # NAME?!
+        table_name="CandidatePort",
         match_fields={
             "p2pEst.matchSrcPortIndex": index
         },
-        action_name="addSrcPort",
+        action_name="addCandidatePort",
         action_params={
-            "srcPort": port
+            "CandidatePort": port
+        })
+    nat.WriteTableEntry(table_entry)
+
+def set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, hostPort):
+    print '[ set_match_ingress_nat_ip ] ', hostIP, ' ', hostPort, ' ', othersideIP, ' ', othersidePort
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="match_ingress_nat_ip",
+        match_fields={
+            "ipv4.srcAddr": othersideIP,
+            "udp.srcPort": othersidePort
+        },
+        action_name="rewrite_dstAddrUDP",
+        action_params={
+            "ipv4Addr": hostIP,
+            "udpPort": hostPort
+        })
+    nat.WriteTableEntry(table_entry)
+
+def set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, NATIP, NATPort):
+    print '[ set_match_egress_nat_ip ] ', NATIP, ' ', NATPort, ' ', othersideIP, ' ', othersidePort
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="match_egress_nat_ip",
+        match_fields={
+            "ipv4.dstAddr": othersideIP,
+            "udp.dstPort": othersidePort
+        },
+        action_name="rewrite_srcAddrUDP",
+        action_params={
+            "ipv4Addr": NATIP,
+            "udpPort": NATPort
         })
     nat.WriteTableEntry(table_entry)
 
@@ -149,21 +179,21 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
     # match_nat_tcp : matching NAT IP table
 
     # send_frame (NAT1)
-    set_send_frame(p4info_helper, nat1, 1, 1)
-    set_send_frame(p4info_helper, nat1, 2, 2)
-    set_send_frame(p4info_helper, nat1, 3, 5)
-    set_send_frame(p4info_helper, nat1, 4, 6)
+    set_send_frame(p4info_helper, nat1, 1, "08:00:00:00:01:00")
+    set_send_frame(p4info_helper, nat1, 2, "08:00:00:00:02:00")
+    set_send_frame(p4info_helper, nat1, 3, "08:00:00:00:05:00")
+    set_send_frame(p4info_helper, nat1, 4, "08:00:00:00:06:00")
 
     # send_frame (NAT2)
-    set_send_frame(p4info_helper, nat2, 1, 3)
-    set_send_frame(p4info_helper, nat2, 2, 4)
-    set_send_frame(p4info_helper, nat2, 3, 5)
-    set_send_frame(p4info_helper, nat2, 4, 6)
+    set_send_frame(p4info_helper, nat2, 1, "08:00:00:00:03:00")
+    set_send_frame(p4info_helper, nat2, 2, "08:00:00:00:04:00")
+    set_send_frame(p4info_helper, nat2, 3, "08:00:00:00:05:00")
+    set_send_frame(p4info_helper, nat2, 4, "08:00:00:00:06:00")
 
     # forward
-    for x in range(1, 5):
+    for x in range(1, 3):
         set_forward(p4info_helper, nat1, '10.0.%d.%d' % (x, x), '08:00:00:00:%02d:%d%d' % (x, x, x))
-        set_forward(p4info_helper, nat2, '10.0.%d.%d' % (x, x), '08:00:00:00:%02d:%d%d' % (x, x, x))
+        set_forward(p4info_helper, nat2, '192.168.%d.%d' % (x+2, x+2), '08:00:00:00:%02d:%d%d' % (x+2, x+2, x+2))
     
     for x in range(1, 3):
         set_forward(p4info_helper, nat1, '140.116.0.%d' % x, '08:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
@@ -173,40 +203,73 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
     #   - table_add ipv4_lpm set_nhop 10.0.1.1/32 => 10.0.1.1 1
     for x in range(1, 3):
         set_ipv4_lpm(p4info_helper, nat1, '10.0.%d.%d' % (x, x), x)
-        set_ipv4_lpm(p4info_helper, nat2, '10.0.%d.%d' % (x+2, x+2), x)
+        set_ipv4_lpm(p4info_helper, nat2, '192.168.%d.%d' % (x+2, x+2), x)
 
     for x in range(1, 3):
         set_ipv4_lpm(p4info_helper, nat1, '140.116.0.%d' % x, x+2)
         set_ipv4_lpm(p4info_helper, nat2, '140.116.0.%d' % x, x+2)
     
-    # match_nat_ip
-    set_match_nat_ip(p4info_helper, nat1, '140.116.0.1')
-    set_match_nat_ip(p4info_helper, nat1, '140.116.0.2')
-    set_match_nat_ip(p4info_helper, nat2, '140.116.0.1')
-    set_match_nat_ip(p4info_helper, nat2, '140.116.0.2')
+    # match_ingress_nat_ip
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, "10.0.1.1", 11111)   # server1 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, "10.0.2.2", 11111)   # server1 -> h2
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.2", 1111, "10.0.1.1", 22222)   # server2 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.2", 2222, "10.0.2.2", 22222)   # server2 -> h2
 
-    # fwd_nat_tcp
-    set_fwd_nat_tcp(p4info_helper, nat1, '10.0.1.1', 5678, '140.116.0.3', 1234)
-    set_fwd_nat_tcp(p4info_helper, nat1, '10.0.2.2', 2, '140.116.0.3', seq_nat_1[1])
-    set_fwd_nat_tcp(p4info_helper, nat2, '192.168.3.3', 1, '140.116.0.4', seq_nat_2[0])
-    set_fwd_nat_tcp(p4info_helper, nat2, '192.168.4.4', 2, '140.116.0.4', seq_nat_2[1])
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.1", 3333, "192.168.3.3", 11111)   # server1 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, "192.168.4.4", 11111)   # server1 -> h2
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, "192.168.3.3", 22222)   # server2 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, "192.168.4.4", 22222)   # server2 -> h2
 
-    # rev_nat_tcp
-    set_rev_nat_tcp(p4info_helper, nat1, '10.0.1.1', 5678, '140.116.0.3', 1234)
-    set_rev_nat_tcp(p4info_helper, nat1, '10.0.2.2', 2, '140.116.0.3', seq_nat_1[1])
-    set_rev_nat_tcp(p4info_helper, nat2, '192.168.3.3', 1, '140.116.0.4', seq_nat_2[0])
-    set_rev_nat_tcp(p4info_helper, nat2, '192.168.4.4', 2, '140.116.0.4', seq_nat_2[1])
+    # match_egress_nat_ip
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, "140.116.0.3", seq_nat_1[0])  # host1 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, "140.116.0.3", seq_nat_1[1])  # host2 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.2", 1111, "140.116.0.3", seq_nat_1[2])  # host1 -> server2
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.2", 2222, "140.116.0.3", seq_nat_1[3])  # host2 -> server2
+
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 3333, "140.116.0.4", seq_nat_2[0])  # host3 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, "140.116.0.4", seq_nat_2[1])  # host4 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, "140.116.0.4", seq_nat_2[2])  # host3 -> server2
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, "140.116.0.4", seq_nat_2[3])  # host4 -> server2
+
+    with open('/home/p4/Desktop/p4-nat/test/portRef.txt', 'w+') as f:
+        f.write('NAT1\n-\n')
+        f.write('%s %d %s %d\n' % ("140.116.0.1", 1111, "140.116.0.3", seq_nat_1[0]) )
+        f.write('%s %d %s %d\n' % ("140.116.0.1", 2222, "140.116.0.3", seq_nat_1[1]) )
+        f.write('%s %d %s %d\n' % ("140.116.0.2", 1111, "140.116.0.3", seq_nat_1[2]) )
+        f.write('%s %d %s %d\n' % ("140.116.0.2", 2222, "140.116.0.3", seq_nat_1[3]) )
+        f.write('\nNAT2\n-\n')
+        f.write('%s %d %s %d\n' % ("140.116.0.1", 3333, "140.116.0.4", seq_nat_2[0]) )
+        f.write('%s %d %s %d\n' % ("140.116.0.1", 4444, "140.116.0.4", seq_nat_2[1]) )
+        f.write('%s %d %s %d\n' % ("140.116.0.2", 3333, "140.116.0.4", seq_nat_2[2]) )
+        f.write('%s %d %s %d\n' % ("140.116.0.2", 4444, "140.116.0.4", seq_nat_2[3]) )
     
-    for i in range(0, 10):
-        set_Src_port(p4info_helper, nat1, seq_nat_1[i], i, 1)
-        set_Src_port(p4info_helper, nat2, seq_nat_2[i], i, 2)
+    # # match_nat_ip
+    # set_match_nat_ip(p4info_helper, nat1, '140.116.0.1')
+    # set_match_nat_ip(p4info_helper, nat1, '140.116.0.2')
+    # set_match_nat_ip(p4info_helper, nat2, '140.116.0.1')
+    # set_match_nat_ip(p4info_helper, nat2, '140.116.0.2')
+
+    # # fwd_nat_tcp
+    # set_fwd_nat_tcp(p4info_helper, nat1, '10.0.1.1', 5678, '140.116.0.3', 1234)
+    # set_fwd_nat_tcp(p4info_helper, nat1, '10.0.2.2', 2, '140.116.0.3', seq_nat_1[1])
+    # set_fwd_nat_tcp(p4info_helper, nat2, '192.168.3.3', 1, '140.116.0.4', seq_nat_2[0])
+    # set_fwd_nat_tcp(p4info_helper, nat2, '192.168.4.4', 2, '140.116.0.4', seq_nat_2[1])
+
+    # # rev_nat_tcp
+    # set_rev_nat_tcp(p4info_helper, nat1, '10.0.1.1', 5678, '140.116.0.3', 1234)
+    # set_rev_nat_tcp(p4info_helper, nat1, '10.0.2.2', 2, '140.116.0.3', seq_nat_1[1])
+    # set_rev_nat_tcp(p4info_helper, nat2, '192.168.3.3', 1, '140.116.0.4', seq_nat_2[0])
+    # set_rev_nat_tcp(p4info_helper, nat2, '192.168.4.4', 2, '140.116.0.4', seq_nat_2[1])
     
-    seq_last_index_1 = 10
-    seq_last_index_2 = 10
+    for i in range(4, 15):
+        set_CandidatePort(p4info_helper, nat1, i, seq_nat_1[i], 1)
+        set_CandidatePort(p4info_helper, nat2, i, seq_nat_2[i], 2)
+    
+    seq_last_index_1 = 15
+    seq_last_index_2 = 15
 
     
     #     set_Src_port(p4info_helper, nat2, i, seq_nat_2[i], 2)
-
 
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
