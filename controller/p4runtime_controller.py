@@ -160,6 +160,20 @@ def set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, NATI
         })
     nat.WriteTableEntry(table_entry)
 
+def set_match_sender(p4info_helper, nat, srcAddr, index):
+    print '[ set_match_sender ] ', srcAddr, ' ', index
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="match_sender",
+        match_fields={
+            "ipv4.srcAddr": srcAddr
+        },
+        action_name="set_sender",
+        action_params={
+            "number": index
+        })
+    nat.WriteTableEntry(table_entry)
+
+
 def WriteBasicRule(p4info_helper, nat1, nat2):
     # TODO: connection between hosts and switches
 
@@ -230,6 +244,17 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
     set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, "140.116.0.4", seq_nat_2[1])  # host4 -> server1
     set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, "140.116.0.4", seq_nat_2[2])  # host3 -> server2
     set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, "140.116.0.4", seq_nat_2[3])  # host4 -> server2
+
+    # # match_sender
+    set_match_sender(p4info_helper, nat1, "10.0.1.1", 0)
+    set_match_sender(p4info_helper, nat1, "10.0.2.2", 1)
+    set_match_sender(p4info_helper, nat1, "192.168.3.3", 2)
+    set_match_sender(p4info_helper, nat1, "192.168.4.4", 3)
+
+    set_match_sender(p4info_helper, nat2, "10.0.1.1", 0)
+    set_match_sender(p4info_helper, nat2, "10.0.2.2", 1)
+    set_match_sender(p4info_helper, nat2, "192.168.3.3", 2)
+    set_match_sender(p4info_helper, nat2, "192.168.4.4", 3)
 
     with open('/home/p4/Desktop/p4-nat/test/portRef.txt', 'w+') as f:
         f.write('NAT1\n-\n')

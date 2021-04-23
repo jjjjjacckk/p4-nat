@@ -10,6 +10,12 @@ from scapy.all import IP, TCP, UDP, Raw, ICMP
 from scapy.fields import BitField, IntField, ShortField, IPField
 from scapy.layers.inet import _IPOption_HDR
 
+num2host = ['h1', 'h2', 'h3', 'h4']
+table = {'h1':['140.116.0.3', {'h2': -1, 'h3': -1, 'h4': -1}], 
+         'h2':['140.116.0.3', {'h1': -1, 'h3': -1, 'h4': -1}], 
+         'h3':['140.116.0.4', {'h1': -1, 'h2': -1, 'h4': -1}], 
+         'h4':['140.116.0.4', {'h1': -1, 'h2': -1, 'h3': -1}]}
+
 class p2pEst(Packet):
     name = 'p2pEst'
     fields_desc = [
@@ -23,18 +29,6 @@ class p2pEst(Packet):
         BitField("isEstPacket", 0, 4),
     ]
 
-def get_if():
-    ifs=get_if_list()
-    iface=None
-    for i in get_if_list():
-        if "eth0" in i:
-            iface=i
-            break;
-    if not iface:
-        print "Cannot find eth0 interface"
-        exit(1)
-    return iface
-
 class IPOption_MRI(IPOption):
     name = "MRI"
     option = 31
@@ -47,6 +41,19 @@ class IPOption_MRI(IPOption):
                                    [],
                                    IntField("", 0),
                                    length_from=lambda pkt:pkt.count*4) ]
+
+def get_if():
+    ifs=get_if_list()
+    iface=None
+    for i in get_if_list():
+        if "eth0" in i:
+            iface=i
+            break;
+    if not iface:
+        print "Cannot find eth0 interface"
+        exit(1)
+    return iface
+
 def reformP2PEst(packetRawLoad):
     p2pRaw = []
     for index in range(0, 16):
@@ -73,6 +80,11 @@ def reformP2PEst(packetRawLoad):
                                  isEstPacket=param_isEstPacket),
                  'msg': packetRawLoad[16:] }
 
+def insertP2PInfo(packet):
+    if packet[p2pEst].isEstPacket == 1:
+        whom = num2host[packet[p2pEst].whom2Connect]
+        
+
 def handle_pkt(pkt):
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
@@ -86,6 +98,10 @@ def handle_pkt(pkt):
         pkt /= Raw(load=segment['msg'])
         print '[ After ]'
         pkt.show()
+
+        
+
+
     #    hexdump(pkt)
         sys.stdout.flush()
     elif ICMP in pkt:

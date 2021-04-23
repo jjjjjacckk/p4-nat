@@ -866,10 +866,12 @@ header udp_t {
 
 header p2pEst_t {
     bit<32> p2pOthersideIP; // direction = 0 -> this value is 0
-    bit<32> p2pOthersidePort; // direction = 0 -> this value is 0
+    bit<16> p2pOthersidePort; // direction = 0 -> this value is 0
     bit<32> selfNATIP; // self NAT IP (will get this after egress NAT translation: host -> server period)
     bit<16> candidatePort; // store candidate port (self)
     bit<16> matchSrcPortIndex; // store index for matching candidate port
+    bit<16> whoAmI; // specify who tries to build connection
+                                // 0 = h1, 1 = h2, 2 = h3, 3 = h4
     bit<1> direction; // transmittion direction of packet
                                 // 1. to server = 0, build connection
                                 // 2. to host   = 1, return information from server
@@ -1061,6 +1063,9 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
 }
 
 control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
+    @name(".set_sender") action set_sender(bit<16> number) {
+        hdr.p2pEst.whoAmI = number;
+    }
     @name(".set_dmac") action set_dmac(bit<48> dmac) {
         hdr.ethernet.dstAddr = dmac;
     }
@@ -1141,6 +1146,16 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         size = 1024;
         default_action = _drop(); // miss = drop the packet
     }
+    @name(".match_sender") table match_sender {
+        actions = {
+            set_sender;
+            NoAction;
+        }
+        key = {
+            hdr.ipv4.srcAddr: exact;
+        }
+        default_action = NoAction();
+    }
     apply {
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
             if (hdr.udp.isValid()) {
@@ -1148,8 +1163,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     if (match_ingress_nat_ip.apply().hit == false) {
                         // if the packet is from the server and not recognized by NAT
                         // , mark the packet as drop
-                        if (hdr.p2pEst.direction == 1w1)
+                        if (hdr.p2pEst.direction == 1w1) {
                             _drop();
+                        }
+                        else {
+                            match_sender.apply();
+                        }
                     } else {
                         // return from server of Establish P2P connection
                         if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1)

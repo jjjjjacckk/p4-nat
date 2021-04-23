@@ -1,10 +1,10 @@
 
-[2021-04-22 10:56:29.702] /p4.v1.P4Runtime/SetForwardingPipelineConfig
+[2021-04-23 15:15:52.676] /p4.v1.P4Runtime/SetForwardingPipelineConfig
 ---
-Message too long (80296 bytes)! Skipping log...
+Message too long (83456 bytes)! Skipping log...
 ---
 
-[2021-04-22 10:56:29.731] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.711] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -34,7 +34,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.734] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.715] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -64,7 +64,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.738] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.717] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -94,7 +94,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.739] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.719] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -124,7 +124,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.747] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.734] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -154,7 +154,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.750] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.743] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -184,7 +184,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.752] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.750] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -214,7 +214,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.755] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.756] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -244,7 +244,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.758] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.760] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -279,7 +279,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.761] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.763] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -314,7 +314,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.763] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.770] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -349,7 +349,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.769] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.776] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -384,7 +384,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.772] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.781] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -424,7 +424,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.773] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.783] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -464,7 +464,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.775] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.787] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -504,7 +504,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.776] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.789] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -544,7 +544,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.784] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.805] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -571,7 +571,7 @@ updates {
           action_id: 16817081
           params {
             param_id: 2
-            value: "\321\000"
+            value: "\262\331"
           }
           params {
             param_id: 1
@@ -584,7 +584,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.786] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.808] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -611,7 +611,7 @@ updates {
           action_id: 16817081
           params {
             param_id: 2
-            value: "J\321"
+            value: "\335\333"
           }
           params {
             param_id: 1
@@ -624,7 +624,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.787] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.810] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -651,7 +651,7 @@ updates {
           action_id: 16817081
           params {
             param_id: 2
-            value: "\351\200"
+            value: "\347\006"
           }
           params {
             param_id: 1
@@ -664,7 +664,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.789] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.813] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -691,7 +691,7 @@ updates {
           action_id: 16817081
           params {
             param_id: 2
-            value: "\203x"
+            value: "66"
           }
           params {
             param_id: 1
@@ -704,7 +704,127 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.800] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.826] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33561264
+      match {
+        field_id: 1
+        exact {
+          value: "\n\000\001\001"
+        }
+      }
+      action {
+        action {
+          action_id: 16833587
+          params {
+            param_id: 1
+            value: "\000\000"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-23 15:15:52.828] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33561264
+      match {
+        field_id: 1
+        exact {
+          value: "\n\000\002\002"
+        }
+      }
+      action {
+        action {
+          action_id: 16833587
+          params {
+            param_id: 1
+            value: "\000\001"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-23 15:15:52.833] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33561264
+      match {
+        field_id: 1
+        exact {
+          value: "\300\250\003\003"
+        }
+      }
+      action {
+        action {
+          action_id: 16833587
+          params {
+            param_id: 1
+            value: "\000\002"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-23 15:15:52.835] /p4.v1.P4Runtime/Write
+---
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33561264
+      match {
+        field_id: 1
+        exact {
+          value: "\300\250\004\004"
+        }
+      }
+      action {
+        action {
+          action_id: 16833587
+          params {
+            param_id: 1
+            value: "\000\003"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2021-04-23 15:15:52.847] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -725,7 +845,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\346\261"
+            value: "+\202"
           }
         }
       }
@@ -734,7 +854,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.803] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.856] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -755,7 +875,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "?X"
+            value: "f|"
           }
         }
       }
@@ -764,7 +884,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.805] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.864] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -785,7 +905,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\364\213"
+            value: "i\233"
           }
         }
       }
@@ -794,7 +914,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.808] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.873] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -815,7 +935,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "h\373"
+            value: "G\211"
           }
         }
       }
@@ -824,7 +944,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.811] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.878] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -845,7 +965,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\020`"
+            value: ":8"
           }
         }
       }
@@ -854,7 +974,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.814] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.883] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -875,7 +995,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "oB"
+            value: "\026<"
           }
         }
       }
@@ -884,7 +1004,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.816] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.887] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -905,7 +1025,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\023O"
+            value: "\007S"
           }
         }
       }
@@ -914,7 +1034,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.819] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.893] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -935,7 +1055,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\317\336"
+            value: "\236\334"
           }
         }
       }
@@ -944,7 +1064,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.821] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.898] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -965,7 +1085,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\237."
+            value: "\351b"
           }
         }
       }
@@ -974,7 +1094,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.824] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.904] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -995,7 +1115,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\303\003"
+            value: "\2560"
           }
         }
       }
@@ -1004,7 +1124,7 @@ updates {
 }
 ---
 
-[2021-04-22 10:56:29.829] /p4.v1.P4Runtime/Write
+[2021-04-23 15:15:52.909] /p4.v1.P4Runtime/Write
 ---
 election_id {
   low: 1
@@ -1025,7 +1145,7 @@ updates {
           action_id: 16823885
           params {
             param_id: 1
-            value: "\220\007"
+            value: "d\330"
           }
         }
       }

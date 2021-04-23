@@ -81,6 +81,26 @@ tables {
 }
 tables {
   preamble {
+    id: 33561264
+    name: "match_sender"
+    alias: "match_sender"
+  }
+  match_fields {
+    id: 1
+    name: "ipv4.srcAddr"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16833587
+  }
+  action_refs {
+    id: 16800567
+  }
+  size: 1024
+}
+tables {
+  preamble {
     id: 33576921
     name: "CandidatePort"
     alias: "CandidatePort"
@@ -157,6 +177,18 @@ actions {
     id: 16800567
     name: "NoAction"
     alias: "NoAction"
+  }
+}
+actions {
+  preamble {
+    id: 16833587
+    name: "set_sender"
+    alias: "set_sender"
+  }
+  params {
+    id: 1
+    name: "number"
+    bitwidth: 16
   }
 }
 actions {
