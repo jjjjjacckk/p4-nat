@@ -12,7 +12,7 @@ sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
                  '../utils/'))
 import p4runtime_lib.bmv2
-from p4runtime_lib.error_utils import printGrpcError
+# from p4runtime_lib.error_utils import printGrpcError
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper
 
@@ -173,6 +173,19 @@ def set_match_sender(p4info_helper, nat, srcAddr, index):
         })
     nat.WriteTableEntry(table_entry)
 
+def set_digest(p4info_helper, sw, digest_name=None):
+    digest_entry = p4info_helper.buildDigestEntry(digest_name=digest_name)
+    sw.WriteDigestEntry(digest_entry)
+    print "Sent DigestEntry via P4Runtime."
+
+def printGrpcError(e):
+    print "gRPC Error: ", e.details(),
+    status_code = e.code()
+    print "(%s)" % status_code.name,
+    # detail about sys.exc_info - https://docs.python.org/2/library/sys.html#sys.exc_info
+    traceback = sys.exc_info()[2]
+    print "[%s:%s]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno)
+
 
 def WriteBasicRule(p4info_helper, nat1, nat2):
     # TODO: connection between hosts and switches
@@ -268,6 +281,9 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
         f.write('%s %d %s %d\n' % ("140.116.0.2", 3333, "140.116.0.4", seq_nat_2[2]) )
         f.write('%s %d %s %d\n' % ("140.116.0.2", 4444, "140.116.0.4", seq_nat_2[3]) )
     
+    set_digest(p4info_helper, sw=nat1, digest_name="CandidatePortDigest")
+    set_digest(p4info_helper, sw=nat2, digest_name="CandidatePortDigest")
+    
     # # match_nat_ip
     # set_match_nat_ip(p4info_helper, nat1, '140.116.0.1')
     # set_match_nat_ip(p4info_helper, nat1, '140.116.0.2')
@@ -340,14 +356,24 @@ def main(p4info_file_path, bmv2_file_path):
                                        bmv2_json_file_path=bmv2_file_path)
         print "Installed P4 Program using SetForwardingPipelineConfig on nat2"
 
-        # TODO: start on doing inserting nat tables
         WriteBasicRule(p4info_helper, nat1, nat2)
 
         counter = 1
         while True:
-            print '[ Waiting... %d]' % counter
-            counter += 1
-            sleep(2)
+            # print '[ Waiting... %d]' % counter
+            # counter += 1
+            # sleep(1)
+
+            digests = nat1.DigestList()
+            print digests.WhichOneof('update')=='digest'
+            print 'digest = ', digests
+            # if digests.WhichOneof('update')=='digest':
+            #     print("Received DigestList message")
+            #     digest = digests.digest
+            #     digest_name = p4info_helper.get_digests_name(digest.digest_id)
+            #     print "===============================" 
+            #     print "Digest name: ", digest_name 
+            #     print "List ID: ", digest.digest_id
 
     except KeyboardInterrupt:
         print " Shutting down."

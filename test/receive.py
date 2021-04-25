@@ -78,33 +78,6 @@ def reformP2PEst(packetRawLoad):
                                   isEstPacket=param_isEstPacket),
                  'msg': packetRawLoad[18:] }
 
-    # p2pRaw = []
-    # for index in range(0, 16):
-    #     p2pRaw.append(ord(packetRawLoad[index]))
-    # print '[ reformP2PEst ] ', repr(packetRawLoad)
-    # print '[ reformP2PEst ] ', p2pRaw, type(p2pRaw), len(p2pRaw), isinstance(p2pRaw, list)
-    # print '[ reformP2PEst ] ', len(packetRawLoad[16:])
-    # if isinstance(p2pRaw, list) and len(p2pRaw) == 16:
-    #     param_p2pOthersideIP = '%d.%d.%d.%d' % (p2pRaw[0], p2pRaw[1], p2pRaw[2], p2pRaw[3])
-    #     param_p2pOthersidePort = p2pRaw[4]*256 + p2pRaw[5]
-    #     param_selfNATIP = '%d.%d.%d.%d' % (p2pRaw[6], p2pRaw[7], p2pRaw[8], p2pRaw[9])
-    #     param_candidatePort = p2pRaw[10]*256 + p2pRaw[11]
-    #     param_matchSrcPortIndex = p2pRaw[12]*256 + p2pRaw[13]
-    #     param_direction = (p2pRaw[14] & 128) >> 7
-    #     param_whom2Connect = (p2pRaw[14] & 127) * 16 + ((p2pRaw[15] & 240) >> 4)
-    #     param_isEstPacket = p2pRaw[15] & 15
-
-    #     return { 'packet': p2pEst(p2pOthersideIP=param_p2pOthersideIP, 
-    #                              p2pOthersidePort=param_p2pOthersidePort, 
-    #                              selfNATIP=param_selfNATIP, 
-    #                              candidatePort=param_candidatePort, 
-    #                              matchSrcPortIndex=param_matchSrcPortIndex, 
-    #                             #  whoAmI=param_whoAmI,
-    #                              direction=param_direction, 
-    #                              whom2Connect=param_whom2Connect, 
-    #                              isEstPacket=param_isEstPacket),
-    #              'msg': packetRawLoad[16:] }
-
 def handle_pkt(pkt):
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:

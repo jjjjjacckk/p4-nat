@@ -3,6 +3,17 @@ pkg_info {
 }
 tables {
   preamble {
+    id: 33573970
+    name: "send_info2controller"
+    alias: "send_info2controller"
+  }
+  action_refs {
+    id: 16793851
+  }
+  size: 1024
+}
+tables {
+  preamble {
     id: 33589124
     name: "forward"
     alias: "forward"
@@ -341,27 +352,7 @@ type_info {
         }
       }
       members {
-        name: "othersidePort"
-        type_spec {
-          bitstring {
-            bit {
-              bitwidth: 32
-            }
-          }
-        }
-      }
-      members {
         name: "hostIP"
-        type_spec {
-          bitstring {
-            bit {
-              bitwidth: 32
-            }
-          }
-        }
-      }
-      members {
-        name: "hostPort"
         type_spec {
           bitstring {
             bit {
@@ -381,11 +372,31 @@ type_info {
         }
       }
       members {
+        name: "othersidePort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 16
+            }
+          }
+        }
+      }
+      members {
+        name: "hostPort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 16
+            }
+          }
+        }
+      }
+      members {
         name: "NATPort"
         type_spec {
           bitstring {
             bit {
-              bitwidth: 32
+              bitwidth: 16
             }
           }
         }

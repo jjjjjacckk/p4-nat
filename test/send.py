@@ -37,7 +37,7 @@ class p2pEst(Packet):
         ShortField("candidatePort", 0),
         ShortField("matchSrcPortIndex", 0),
         ShortField("whoAmI", 1),
-        BitField("direction", 0, 1),
+        BitField("direction", 1, 1),
         BitField("whom2Connect", 0, 11),
         BitField("isEstPacket", 1, 4),
     ]

@@ -21,6 +21,8 @@
 #
 import os, sys, json, subprocess, re, argparse
 from time import sleep
+import time
+import threading
 
 from p4_mininet import P4Switch, P4Host
 
@@ -214,6 +216,8 @@ class ExerciseRunner:
         self.switch_json = switch_json
         self.bmv2_exe = bmv2_exe
 
+        self.start_time = 0
+
 
     def run_exercise(self):
         """ Sets up the mininet instance, programs the switches,
@@ -229,12 +233,52 @@ class ExerciseRunner:
         self.program_hosts()
         self.program_switches()
 
+        print 'START CONTROLLER!!'
         # wait for that to finish. Not sure how to do this better
-        sleep(1)
+        sleep(5)
+        print 'END WAITING, START THREADING'
 
         self.do_net_cli()
         # stop right after the CLI is exited
         self.net.stop()
+
+        # self.start_time=time.time()
+
+        # normal = threading.Thread(target=self.normal_testing)
+        # normal.start()
+        # a2 = threading.Thread(target=self.attack_testing)
+        # a2.start()
+
+        # self.do_net_cli()
+        # stop right after the CLI is exited
+        # normal.join()
+        # a2.join()
+        # while True:
+        #     if time.time()-self.start_time > 200:
+        #         self.net.stop()
+
+
+
+
+    def normal_testing(self):
+        h = self.net.get(self.topo.hosts()[4])
+        while True:
+            print '[ normal_testing ]', 'i\'m in here'
+            # for host_name in self.topo.hosts()[1:10]:
+            if time.time()-self.start_time >= 200:
+                print "normal_stop"
+                return
+            print '[ normal_testing ], curling...'
+            h.cmd("curl 127.0.0.1 &")
+            print '[ normal_testing ], end curling, and starting waiting' 
+            sleep(2)
+            print '[ normal_testing ], stop waiting, and start anther time!!'
+            # if time.time()-self.start_time >= 150:
+            #     print "normal_stop"
+            #     return
+            # h = self.net.get(self.topo.hosts()[14])
+            # h.cmd("curl 10.0.1.1 &")
+            # sleep(0.5)
 
 
     def parse_links(self, unparsed_links):

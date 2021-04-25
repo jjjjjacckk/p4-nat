@@ -122,13 +122,17 @@ struct headers {
     udp_t      udp;
 }
 
+struct syn_ack_digest{
+    bit<32> IP;
+}
+
 struct CandidatePortDigest {
     bit<32> othersideIP;    
-    bit<32> othersidePort;
     bit<32> hostIP;         // local IP
-    bit<32> hostPort;       // local Port
     bit<32> NATIP;          // NAT IP
-    bit<32> NATPort;        // NAT Port
+    bit<16> othersidePort;
+    bit<16> hostPort;       // local Port
+    bit<16> NATPort;        // NAT Port
 }
 
 parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
@@ -186,16 +190,16 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
 
         src_index.write(0, hdr.p2pEst.matchSrcPortIndex+1);
     }
-    @name("._DIGEST_Egress") action _DIGEST_Egress() {
-        // Digest info to controller to add new EgressTaleEntry
-        // Digest = send info to controller
-        digest<CandidatePortDigest>( (bit<32>)1024, { hdr.ipv4.dstAddr,
-                                                      (bit<32>)hdr.udp.dstPort,
-                                                      hdr.ipv4.srcAddr,  // host IP
-                                                      (bit<32>)hdr.udp.srcPort,      // host port
-                                                      hdr.p2pEst.selfNATIP,
-                                                      (bit<32>)hdr.p2pEst.candidatePort });
-    }
+    // @name("._DIGEST_Egress") action _DIGEST_Egress() {
+    //     // Digest info to controller to add new EgressTaleEntry
+    //     // Digest = send info to controller
+    //     digest<CandidatePortDigest>( (bit<32>)1024, { hdr.ipv4.dstAddr,
+    //                                                   (bit<32>)hdr.udp.dstPort,
+    //                                                   hdr.ipv4.srcAddr,  // host IP
+    //                                                   (bit<32>)hdr.udp.srcPort,      // host port
+    //                                                   hdr.p2pEst.selfNATIP,
+    //                                                   (bit<32>)hdr.p2pEst.candidatePort });
+    // }
     @name(".rewrite_srcAddrUDP") action rewrite_srcAddrUDP(bit<32> ipv4Addr, bit<16> udpPort) {
         // NAT translation
         hdr.ipv4.srcAddr = ipv4Addr;
@@ -283,6 +287,13 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
 }
 
 control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
+    @name(".new_synack") action new_synack(){
+        digest<syn_ack_digest>((bit<32>) 1024,
+        {
+            0xffffffff
+        });
+    }
+
     @name(".set_sender") action set_sender(bit<16> number) {
         hdr.p2pEst.whoAmI = number;
     }
@@ -307,13 +318,22 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
     @name("_DIGEST_Ingress") action _DIGEST_Ingress() {
         // parameters are following the sequence in "CandidatePortDigest" struct
-        digest<CandidatePortDigest>( (bit<32>)1024, { hdr.p2pEst.p2pOthersideIP, 
-                                                      (bit<32>)hdr.p2pEst.p2pOthersidePort, 
-                                                      hdr.ipv4.dstAddr,             // host IP
-                                                      (bit<32>)hdr.udp.dstPort,              // host port
-                                                      hdr.p2pEst.selfNATIP,             // NAT IP
-                                                      (bit<32>)hdr.p2pEst.candidatePort      // Candidate Port for this connection
-                                                    });
+        // digest<CandidatePortDigest>( (bit<32>)1024, { hdr.p2pEst.p2pOthersideIP, 
+        //                                               hdr.ipv4.dstAddr,                         // host IP
+        //                                               hdr.p2pEst.selfNATIP,                     // NAT IP
+        //                                               hdr.p2pEst.p2pOthersidePort, 
+        //                                               hdr.udp.dstPort,                 // host port
+        //                                               hdr.p2pEst.candidatePort         // Candidate Port for this connection
+        //                                             });
+
+        digest<CandidatePortDigest>( (bit<32>)1024, { 0x11111111, 0x22222222, 0x33333333, 0x4444, 0x5555, 0x6666 });
+
+    }
+    @name(".send_info2controller") table send_info2controller {
+        actions = { _DIGEST_Ingress; }
+        key = { }
+        size = 1024;
+        default_action = _DIGEST_Ingress();
     }
     @name(".forward") table forward {
         actions = {
@@ -377,6 +397,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         default_action = NoAction();
     }
     apply {
+        send_info2controller.apply();
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
             if (hdr.udp.isValid()) {
                 if (hdr.p2pEst.isValid()) {
@@ -391,8 +412,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         }
                     } else {
                         // return from server of Establish P2P connection
-                        if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1) 
-                            _DIGEST_Ingress();
+                        // if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1) 
+                            // send_info2controller.apply();
                     }
                 }
             }
