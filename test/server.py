@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import sys
 import struct
+import socket
 import os
 
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
 from scapy.all import Packet, IPOption
 from scapy.all import ShortField, IntField, LongField, BitField, FieldListField, FieldLenField
-from scapy.all import IP, TCP, UDP, Raw, ICMP
+from scapy.all import IP, TCP, UDP, Raw, ICMP, Ether
 from scapy.fields import BitField, IntField, ShortField, IPField
 from scapy.layers.inet import _IPOption_HDR
 
@@ -19,15 +20,15 @@ table = {'h1':['140.116.0.3', {'h2': -1, 'h3': -1, 'h4': -1}],
 class p2pEst(Packet):
     name = 'p2pEst'
     fields_desc = [
-        IPField("p2pOthersideIP", "0.0.0.0"),
-        ShortField("p2pOthersidePort", 0),
-        IPField("selfNATIP", "0.0.0.0"),
-        ShortField("candidatePort", 0),
+        IPField("p2pOthersideIP", "140.116.0.4"),
+        ShortField("p2pOthersidePort", 6789),
+        IPField("selfNATIP", "140.116.0.3"),
+        ShortField("candidatePort", 14325),
         ShortField("matchSrcPortIndex", 0),
-        ShortField("whoAmI", 0), 
-        BitField("direction", 0, 1),
+        ShortField("whoAmI", 1),
+        BitField("direction", 1, 1),
         BitField("whom2Connect", 0, 11),
-        BitField("isEstPacket", 0, 4),
+        BitField("isEstPacket", 1, 4),
     ]
 
 class IPOption_MRI(IPOption):
@@ -89,9 +90,13 @@ def insertP2PInfo(packet):
         whom = num2host[packet[p2pEst].whom2Connect]
         
 
+isDoneSniff = False
+
 def handle_pkt(pkt):
+    global isDoneSniff
+
     # if TCP in pkt and pkt[TCP].dport == 1234:
-    if UDP in pkt:
+    if UDP in pkt :
         print "got a packet"
         pkt.show()
 
@@ -102,29 +107,49 @@ def handle_pkt(pkt):
         pkt /= Raw(load=segment['msg'])
         print '[ After ]'
         pkt.show()
-
-        
-
-
     #    hexdump(pkt)
         sys.stdout.flush()
+        isDoneSniff = True
     elif ICMP in pkt:
         pkt.show2()
-    else:
-        print '!!UNKOWN!!'
-        pkt.show()
 
-    
-
+def getIsDoneSniff(x):
+    # parameter "x" is given by sniff function
+    global isDoneSniff
+    return isDoneSniff
 
 def main():
+    global isDoneSniff
+
     #ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     #iface = ifaces[0]
     iface = sys.argv[1]
     print "sniffing on %s" % iface
     sys.stdout.flush()
     sniff(iface = iface,
-          prn = handle_pkt)
+          prn = handle_pkt,
+          stop_filter = getIsDoneSniff)
+
+    dstAddr = input('Dst Address: ')
+    addr = socket.gethostbyname(dstAddr)
+    #iface = get_if()
+    dp = input('Dst Port: ')
+    sp = input('Src Port: ')
+    msg = input('message: ')
+
+
+    print "sending on interface %s to %s" % (iface, str(addr))
+    # print 'get_if_hwaddr(iface) ', get_if_hwaddr('eth0')
+    pkt =  Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
+
+    # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
+    # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
+    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst() / msg
+    pkt.show()
+    sendp(pkt, iface=iface, verbose=False)
+
+
+    print 'HERE!!!'
 
 if __name__ == '__main__':
     main()

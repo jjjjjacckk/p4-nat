@@ -25,6 +25,7 @@
     },
     "links": [
         ["h1", "nat1-p1"], ["h2", "nat1-p2"], ["server1", "nat1-p3"], ["server2", "nat1-p4"], 
-        ["h3", "nat2-p1"], ["h4", "nat2-p2"], ["server1", "nat2-p3"], ["server2", "nat2-p4"]
+        ["h3", "nat2-p1"], ["h4", "nat2-p2"], ["server1", "nat2-p3"], ["server2", "nat2-p4"],
+        ["nat1-p5", "nat2-p5"]
     ]
 }

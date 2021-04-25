@@ -80,6 +80,12 @@ tables {
     bitwidth: 16
     match_type: EXACT
   }
+  match_fields {
+    id: 3
+    name: "udp.dstPort"
+    bitwidth: 16
+    match_type: EXACT
+  }
   action_refs {
     id: 16784528
   }
@@ -145,6 +151,18 @@ tables {
   match_fields {
     id: 2
     name: "udp.dstPort"
+    bitwidth: 16
+    match_type: EXACT
+  }
+  match_fields {
+    id: 3
+    name: "ipv4.srcAddr"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  match_fields {
+    id: 4
+    name: "udp.srcPort"
     bitwidth: 16
     match_type: EXACT
   }

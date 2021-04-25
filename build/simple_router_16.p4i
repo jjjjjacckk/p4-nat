@@ -1016,6 +1016,8 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
         key = {
             hdr.ipv4.dstAddr: exact;
             hdr.udp.dstPort: exact;
+            hdr.ipv4.srcAddr: exact;
+            hdr.udp.srcPort: exact;
         }
     }
     @name(".fwd_nat_tcp") table fwd_nat_tcp {
@@ -1098,16 +1100,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
     @name("_DIGEST_Ingress") action _DIGEST_Ingress() {
         // parameters are following the sequence in "CandidatePortDigest" struct
-        // digest<CandidatePortDigest>( (bit<32>)1024, { hdr.p2pEst.p2pOthersideIP, 
-        //                                               hdr.ipv4.dstAddr,                         // host IP
-        //                                               hdr.p2pEst.selfNATIP,                     // NAT IP
-        //                                               hdr.p2pEst.p2pOthersidePort, 
-        //                                               hdr.udp.dstPort,                 // host port
-        //                                               hdr.p2pEst.candidatePort         // Candidate Port for this connection
-        //                                             });
-
-        digest<CandidatePortDigest>( (bit<32>)1024, { 0x11111111, 0x22222222, 0x33333333, 0x4444, 0x5555, 0x6666 });
-
+        digest<CandidatePortDigest>( (bit<32>)1024, { hdr.p2pEst.p2pOthersideIP,
+                                                      hdr.ipv4.dstAddr, // host IP
+                                                      hdr.p2pEst.selfNATIP, // NAT IP
+                                                      hdr.p2pEst.p2pOthersidePort,
+                                                      hdr.udp.dstPort, // host port
+                                                      hdr.p2pEst.candidatePort // Candidate Port for this connection
+                                                    });
     }
     @name(".send_info2controller") table send_info2controller {
         actions = { _DIGEST_Ingress; }
@@ -1142,6 +1141,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         key = {
             hdr.ipv4.srcAddr: exact;
             hdr.udp.srcPort: exact;
+            hdr.udp.dstPort: exact;
         }
     }
     @name(".rev_nat_tcp") table rev_nat_tcp {
@@ -1177,7 +1177,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         default_action = NoAction();
     }
     apply {
-        send_info2controller.apply();
+        // send_info2controller.apply();
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
             if (hdr.udp.isValid()) {
                 if (hdr.p2pEst.isValid()) {
@@ -1192,8 +1192,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         }
                     } else {
                         // return from server of Establish P2P connection
-                        // if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1) 
-                            // send_info2controller.apply();
+                        if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1)
+                            send_info2controller.apply();
                     }
                 }
             }

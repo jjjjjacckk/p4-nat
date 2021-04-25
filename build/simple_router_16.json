@@ -665,9 +665,9 @@
       "name" : "CandidatePortDigest",
       "source_info" : {
         "filename" : "../simple_router_16.p4",
-        "line" : 329,
+        "line" : 323,
         "column" : 52,
-        "source_fragment" : "{ 0x11111111, 0x22222222, 0x33333333, 0x4444, 0x5555, 0x6666 }"
+        "source_fragment" : "{ hdr.p2pEst.p2pOthersideIP, ..."
       },
       "elements" : [
         {
@@ -1093,7 +1093,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 272,
+            "line" : 274,
             "column" : 20,
             "source_fragment" : "hdr.p2pEst.selfNATIP = hdr.ipv4.srcAddr"
           }
@@ -1148,7 +1148,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 298,
+            "line" : 300,
             "column" : 8,
             "source_fragment" : "hdr.p2pEst.whoAmI = number"
           }
@@ -1179,7 +1179,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 301,
+            "line" : 303,
             "column" : 8,
             "source_fragment" : "hdr.ethernet.dstAddr = dmac"
           }
@@ -1201,7 +1201,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 304,
+            "line" : 306,
             "column" : 8,
             "source_fragment" : "mark_to_drop(standard_metadata)"
           }
@@ -1223,7 +1223,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 304,
+            "line" : 306,
             "column" : 8,
             "source_fragment" : "mark_to_drop(standard_metadata)"
           }
@@ -1245,7 +1245,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 304,
+            "line" : 306,
             "column" : 8,
             "source_fragment" : "mark_to_drop(standard_metadata)"
           }
@@ -1280,7 +1280,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 307,
+            "line" : 309,
             "column" : 8,
             "source_fragment" : "meta.routing_metadata.nhop_ipv4 = nhop_ipv4"
           }
@@ -1299,7 +1299,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 308,
+            "line" : 310,
             "column" : 8,
             "source_fragment" : "standard_metadata.egress_spec = port"
           }
@@ -1341,7 +1341,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 309,
+            "line" : 311,
             "column" : 8,
             "source_fragment" : "hdr.ipv4.ttl = hdr.ipv4.ttl - 8w1"
           }
@@ -1376,7 +1376,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 315,
+            "line" : 317,
             "column" : 8,
             "source_fragment" : "hdr.ipv4.dstAddr = ipv4Addr"
           }
@@ -1395,7 +1395,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 316,
+            "line" : 318,
             "column" : 8,
             "source_fragment" : "hdr.udp.dstPort = udpPort"
           }
@@ -1414,7 +1414,7 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 317,
+            "line" : 319,
             "column" : 8,
             "source_fragment" : "meta.meta.natReverse = 1w1"
           }
@@ -1434,15 +1434,15 @@
               "value" : ["scalars", "tmp_2"]
             },
             {
-              "type" : "hexstr",
-              "value" : "0x11111111"
+              "type" : "field",
+              "value" : ["p2pEst", "p2pOthersideIP"]
             }
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
+            "line" : 323,
             "column" : 54,
-            "source_fragment" : "0x11111111"
+            "source_fragment" : "hdr.p2pEst.p2pOthersideIP"
           }
         },
         {
@@ -1453,15 +1453,15 @@
               "value" : ["scalars", "tmp_3"]
             },
             {
-              "type" : "hexstr",
-              "value" : "0x22222222"
+              "type" : "field",
+              "value" : ["ipv4", "dstAddr"]
             }
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
-            "column" : 66,
-            "source_fragment" : "0x22222222"
+            "line" : 324,
+            "column" : 54,
+            "source_fragment" : "hdr.ipv4.dstAddr"
           }
         },
         {
@@ -1472,15 +1472,15 @@
               "value" : ["scalars", "tmp_4"]
             },
             {
-              "type" : "hexstr",
-              "value" : "0x33333333"
+              "type" : "field",
+              "value" : ["p2pEst", "selfNATIP"]
             }
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
-            "column" : 78,
-            "source_fragment" : "0x33333333"
+            "line" : 325,
+            "column" : 54,
+            "source_fragment" : "hdr.p2pEst.selfNATIP"
           }
         },
         {
@@ -1491,15 +1491,15 @@
               "value" : ["scalars", "tmp_5"]
             },
             {
-              "type" : "hexstr",
-              "value" : "0x4444"
+              "type" : "field",
+              "value" : ["p2pEst", "p2pOthersidePort"]
             }
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
-            "column" : 90,
-            "source_fragment" : "0x4444"
+            "line" : 326,
+            "column" : 54,
+            "source_fragment" : "hdr.p2pEst.p2pOthersidePort"
           }
         },
         {
@@ -1510,15 +1510,15 @@
               "value" : ["scalars", "tmp_6"]
             },
             {
-              "type" : "hexstr",
-              "value" : "0x5555"
+              "type" : "field",
+              "value" : ["udp", "dstPort"]
             }
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
-            "column" : 98,
-            "source_fragment" : "0x5555"
+            "line" : 327,
+            "column" : 54,
+            "source_fragment" : "hdr.udp.dstPort"
           }
         },
         {
@@ -1529,15 +1529,15 @@
               "value" : ["scalars", "tmp_7"]
             },
             {
-              "type" : "hexstr",
-              "value" : "0x6666"
+              "type" : "field",
+              "value" : ["p2pEst", "candidatePort"]
             }
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
-            "column" : 106,
-            "source_fragment" : "0x6666"
+            "line" : 328,
+            "column" : 54,
+            "source_fragment" : "hdr.p2pEst.candidatePort"
           }
         },
         {
@@ -1554,9 +1554,9 @@
           ],
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 329,
+            "line" : 323,
             "column" : 8,
-            "source_fragment" : "digest<CandidatePortDigest>( (bit<32>)1024, { 0x11111111, 0x22222222, 0x33333333, 0x4444, 0x5555, 0x6666 })"
+            "source_fragment" : "digest<CandidatePortDigest>( (bit<32>)1024, { hdr.p2pEst.p2pOthersideIP, ..."
           }
         }
       ]
@@ -1628,47 +1628,18 @@
       "id" : 0,
       "source_info" : {
         "filename" : "../simple_router_16.p4",
-        "line" : 289,
+        "line" : 291,
         "column" : 8,
         "source_fragment" : "MyIngress"
       },
-      "init_table" : "send_info2controller",
+      "init_table" : "node_2",
       "tables" : [
         {
-          "name" : "send_info2controller",
+          "name" : "match_ingress_nat_ip",
           "id" : 0,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 332,
-            "column" : 41,
-            "source_fragment" : "send_info2controller"
-          },
-          "key" : [],
-          "match_type" : "exact",
-          "type" : "simple",
-          "max_size" : 1024,
-          "with_counters" : false,
-          "support_timeout" : false,
-          "direct_meters" : null,
-          "action_ids" : [22],
-          "actions" : ["MyIngress._DIGEST_Ingress"],
-          "base_default_next" : "node_3",
-          "next_tables" : {
-            "MyIngress._DIGEST_Ingress" : "node_3"
-          },
-          "default_entry" : {
-            "action_id" : 22,
-            "action_const" : false,
-            "action_data" : [],
-            "action_entry_const" : false
-          }
-        },
-        {
-          "name" : "match_ingress_nat_ip",
-          "id" : 1,
-          "source_info" : {
-            "filename" : "../simple_router_16.p4",
-            "line" : 358,
+            "line" : 357,
             "column" : 41,
             "source_fragment" : "match_ingress_nat_ip"
           },
@@ -1683,6 +1654,12 @@
               "match_type" : "exact",
               "name" : "udp.srcPort",
               "target" : ["udp", "srcPort"],
+              "mask" : null
+            },
+            {
+              "match_type" : "exact",
+              "name" : "udp.dstPort",
+              "target" : ["udp", "dstPort"],
               "mask" : null
             }
           ],
@@ -1708,7 +1685,7 @@
         },
         {
           "name" : "tbl_act_2",
-          "id" : 2,
+          "id" : 1,
           "key" : [],
           "match_type" : "exact",
           "type" : "simple",
@@ -1718,9 +1695,9 @@
           "direct_meters" : null,
           "action_ids" : [23],
           "actions" : ["act_2"],
-          "base_default_next" : "node_9",
+          "base_default_next" : "node_8",
           "next_tables" : {
-            "act_2" : "node_9"
+            "act_2" : "node_8"
           },
           "default_entry" : {
             "action_id" : 23,
@@ -1731,7 +1708,7 @@
         },
         {
           "name" : "tbl_act_3",
-          "id" : 3,
+          "id" : 2,
           "key" : [],
           "match_type" : "exact",
           "type" : "simple",
@@ -1741,9 +1718,9 @@
           "direct_meters" : null,
           "action_ids" : [24],
           "actions" : ["act_3"],
-          "base_default_next" : "node_9",
+          "base_default_next" : "node_8",
           "next_tables" : {
-            "act_3" : "node_9"
+            "act_3" : "node_8"
           },
           "default_entry" : {
             "action_id" : 24,
@@ -1754,7 +1731,7 @@
         },
         {
           "name" : "tbl__drop",
-          "id" : 4,
+          "id" : 3,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
             "line" : 408,
@@ -1783,7 +1760,7 @@
         },
         {
           "name" : "match_sender",
-          "id" : 5,
+          "id" : 4,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
             "line" : 389,
@@ -1819,11 +1796,40 @@
           }
         },
         {
+          "name" : "send_info2controller",
+          "id" : 5,
+          "source_info" : {
+            "filename" : "../simple_router_16.p4",
+            "line" : 331,
+            "column" : 41,
+            "source_fragment" : "send_info2controller"
+          },
+          "key" : [],
+          "match_type" : "exact",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [22],
+          "actions" : ["MyIngress._DIGEST_Ingress"],
+          "base_default_next" : "ipv4_lpm",
+          "next_tables" : {
+            "MyIngress._DIGEST_Ingress" : "ipv4_lpm"
+          },
+          "default_entry" : {
+            "action_id" : 22,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        },
+        {
           "name" : "ipv4_lpm",
           "id" : 6,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 348,
+            "line" : 347,
             "column" : 29,
             "source_fragment" : "ipv4_lpm"
           },
@@ -1861,7 +1867,7 @@
           "id" : 7,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 338,
+            "line" : 337,
             "column" : 28,
             "source_fragment" : "forward"
           },
@@ -1898,7 +1904,7 @@
       "action_profiles" : [],
       "conditionals" : [
         {
-          "name" : "node_3",
+          "name" : "node_2",
           "id" : 0,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
@@ -1938,10 +1944,10 @@
             }
           },
           "false_next" : null,
-          "true_next" : "node_4"
+          "true_next" : "node_3"
         },
         {
-          "name" : "node_4",
+          "name" : "node_3",
           "id" : 1,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
@@ -1960,11 +1966,11 @@
               }
             }
           },
-          "true_next" : "node_5",
+          "true_next" : "node_4",
           "false_next" : "ipv4_lpm"
         },
         {
-          "name" : "node_5",
+          "name" : "node_4",
           "id" : 2,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
@@ -1987,7 +1993,7 @@
           "false_next" : "ipv4_lpm"
         },
         {
-          "name" : "node_9",
+          "name" : "node_8",
           "id" : 3,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
@@ -2016,11 +2022,11 @@
               }
             }
           },
-          "true_next" : "node_10",
-          "false_next" : "ipv4_lpm"
+          "true_next" : "node_9",
+          "false_next" : "node_12"
         },
         {
-          "name" : "node_10",
+          "name" : "node_9",
           "id" : 4,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
@@ -2044,6 +2050,52 @@
           },
           "true_next" : "tbl__drop",
           "false_next" : "match_sender"
+        },
+        {
+          "name" : "node_12",
+          "id" : 5,
+          "source_info" : {
+            "filename" : "../simple_router_16.p4",
+            "line" : 415,
+            "column" : 28,
+            "source_fragment" : "hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1"
+          },
+          "expression" : {
+            "type" : "expression",
+            "value" : {
+              "op" : "and",
+              "left" : {
+                "type" : "expression",
+                "value" : {
+                  "op" : "==",
+                  "left" : {
+                    "type" : "field",
+                    "value" : ["p2pEst", "direction"]
+                  },
+                  "right" : {
+                    "type" : "hexstr",
+                    "value" : "0x01"
+                  }
+                }
+              },
+              "right" : {
+                "type" : "expression",
+                "value" : {
+                  "op" : "==",
+                  "left" : {
+                    "type" : "field",
+                    "value" : ["p2pEst", "isEstPacket"]
+                  },
+                  "right" : {
+                    "type" : "hexstr",
+                    "value" : "0x01"
+                  }
+                }
+              }
+            }
+          },
+          "true_next" : "send_info2controller",
+          "false_next" : "ipv4_lpm"
         }
       ]
     },
@@ -2056,7 +2108,7 @@
         "column" : 8,
         "source_fragment" : "MyEgress"
       },
-      "init_table" : "node_17",
+      "init_table" : "node_18",
       "tables" : [
         {
           "name" : "match_egress_nat_ip",
@@ -2078,6 +2130,18 @@
               "match_type" : "exact",
               "name" : "udp.dstPort",
               "target" : ["udp", "dstPort"],
+              "mask" : null
+            },
+            {
+              "match_type" : "exact",
+              "name" : "ipv4.srcAddr",
+              "target" : ["ipv4", "srcAddr"],
+              "mask" : null
+            },
+            {
+              "match_type" : "exact",
+              "name" : "udp.srcPort",
+              "target" : ["udp", "srcPort"],
               "mask" : null
             }
           ],
@@ -2113,9 +2177,9 @@
           "direct_meters" : null,
           "action_ids" : [8],
           "actions" : ["act"],
-          "base_default_next" : "node_21",
+          "base_default_next" : "node_22",
           "next_tables" : {
-            "act" : "node_21"
+            "act" : "node_22"
           },
           "default_entry" : {
             "action_id" : 8,
@@ -2136,9 +2200,9 @@
           "direct_meters" : null,
           "action_ids" : [9],
           "actions" : ["act_0"],
-          "base_default_next" : "node_21",
+          "base_default_next" : "node_22",
           "next_tables" : {
-            "act_0" : "node_21"
+            "act_0" : "node_22"
           },
           "default_entry" : {
             "action_id" : 9,
@@ -2152,7 +2216,7 @@
           "id" : 11,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 268,
+            "line" : 270,
             "column" : 20,
             "source_fragment" : "set_CandidatePortIndex()"
           },
@@ -2218,7 +2282,7 @@
           "id" : 13,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 272,
+            "line" : 274,
             "column" : 41,
             "source_fragment" : "="
           },
@@ -2247,7 +2311,7 @@
           "id" : 14,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 252,
+            "line" : 254,
             "column" : 31,
             "source_fragment" : "send_frame"
           },
@@ -2284,11 +2348,11 @@
       "action_profiles" : [],
       "conditionals" : [
         {
-          "name" : "node_17",
-          "id" : 5,
+          "name" : "node_18",
+          "id" : 6,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 263,
+            "line" : 265,
             "column" : 12,
             "source_fragment" : "hdr.udp.isValid()"
           },
@@ -2307,8 +2371,8 @@
           "false_next" : "send_frame"
         },
         {
-          "name" : "node_21",
-          "id" : 6,
+          "name" : "node_22",
+          "id" : 7,
           "expression" : {
             "type" : "expression",
             "value" : {
@@ -2320,15 +2384,15 @@
               }
             }
           },
-          "true_next" : "node_22",
+          "true_next" : "node_23",
           "false_next" : "send_frame"
         },
         {
-          "name" : "node_22",
-          "id" : 7,
+          "name" : "node_23",
+          "id" : 8,
           "source_info" : {
             "filename" : "../simple_router_16.p4",
-            "line" : 266,
+            "line" : 268,
             "column" : 20,
             "source_fragment" : "hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 4w1"
           },

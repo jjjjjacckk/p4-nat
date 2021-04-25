@@ -136,6 +136,7 @@ class ExerciseTopo(Topo):
         for link in switch_links:
             sw1_name, sw1_port = self.parse_switch_node(link['node1'])
             sw2_name, sw2_port = self.parse_switch_node(link['node2'])
+            print '[ switch_links ]', sw1_name, sw1_port, sw2_name, sw2_port
             self.addLink(sw1_name, sw2_name,
                         port1=sw1_port, port2=sw2_port,
                         delay=link['latency'], bw=link['bandwidth'])
@@ -235,7 +236,7 @@ class ExerciseRunner:
 
         print 'START CONTROLLER!!'
         # wait for that to finish. Not sure how to do this better
-        sleep(5)
+        # sleep(5)
         print 'END WAITING, START THREADING'
 
         self.do_net_cli()

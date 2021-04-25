@@ -130,13 +130,14 @@ def set_CandidatePort(p4info_helper, nat, index, port, nat_num):
         })
     nat.WriteTableEntry(table_entry)
 
-def set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, hostPort):
+def set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort, hostIP, hostPort):
     print '[ set_match_ingress_nat_ip ] ', hostIP, ' ', hostPort, ' ', othersideIP, ' ', othersidePort
     table_entry = p4info_helper.buildTableEntry(
         table_name="match_ingress_nat_ip",
         match_fields={
             "ipv4.srcAddr": othersideIP,
-            "udp.srcPort": othersidePort
+            "udp.srcPort": othersidePort,
+            "udp.dstPort": candidatePort
         },
         action_name="rewrite_dstAddrUDP",
         action_params={
@@ -145,13 +146,15 @@ def set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hos
         })
     nat.WriteTableEntry(table_entry)
 
-def set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, NATIP, NATPort):
+def set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP, srcPort, NATIP, NATPort):
     print '[ set_match_egress_nat_ip ] ', NATIP, ' ', NATPort, ' ', othersideIP, ' ', othersidePort
     table_entry = p4info_helper.buildTableEntry(
         table_name="match_egress_nat_ip",
         match_fields={
             "ipv4.dstAddr": othersideIP,
-            "udp.dstPort": othersidePort
+            "udp.dstPort": othersidePort,
+            "ipv4.srcAddr": srcIP,
+            "udp.srcPort": srcPort
         },
         action_name="rewrite_srcAddrUDP",
         action_params={
@@ -186,6 +189,13 @@ def printGrpcError(e):
     traceback = sys.exc_info()[2]
     print "[%s:%s]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno)
 
+def prettify(IP_string):
+    return '.'.join('%d' % ord(b) for b in IP_string)
+
+def int_prettify(int_string):
+    first = ord(int_string[0])
+    second = ord(int_string[1])
+    return first*256 + second
 
 def WriteBasicRule(p4info_helper, nat1, nat2):
     # TODO: connection between hosts and switches
@@ -237,26 +247,26 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
         set_ipv4_lpm(p4info_helper, nat2, '140.116.0.%d' % x, x+2)
     
     # match_ingress_nat_ip
-    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, "10.0.1.1", 11111)   # server1 -> h1
-    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, "10.0.2.2", 11111)   # server1 -> h2
-    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.2", 1111, "10.0.1.1", 22222)   # server2 -> h1
-    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.2", 2222, "10.0.2.2", 22222)   # server2 -> h2
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, seq_nat_1[0], "10.0.1.1", 11111)   # server1 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, seq_nat_1[1], "10.0.2.2", 11111)   # server1 -> h2
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.2", 1111, seq_nat_1[2], "10.0.1.1", 22222)   # server2 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.2", 2222, seq_nat_1[3], "10.0.2.2", 22222)   # server2 -> h2
 
-    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.1", 3333, "192.168.3.3", 11111)   # server1 -> h1
-    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, "192.168.4.4", 11111)   # server1 -> h2
-    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, "192.168.3.3", 22222)   # server2 -> h1
-    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, "192.168.4.4", 22222)   # server2 -> h2
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.1", 3333, seq_nat_2[0], "192.168.3.3", 11111)   # server1 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, seq_nat_2[1], "192.168.4.4", 11111)   # server1 -> h2
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, seq_nat_2[2], "192.168.3.3", 22222)   # server2 -> h1
+    set_match_ingress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, seq_nat_2[3], "192.168.4.4", 22222)   # server2 -> h2
 
     # match_egress_nat_ip
-    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, "140.116.0.3", seq_nat_1[0])  # host1 -> server1
-    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, "140.116.0.3", seq_nat_1[1])  # host2 -> server1
-    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.2", 1111, "140.116.0.3", seq_nat_1[2])  # host1 -> server2
-    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.2", 2222, "140.116.0.3", seq_nat_1[3])  # host2 -> server2
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, "10.0.1.1", 11111, "140.116.0.3", seq_nat_1[0])  # host1 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, "10.0.2.2", 11111, "140.116.0.3", seq_nat_1[1])  # host2 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.2", 1111, "10.0.1.1", 22222, "140.116.0.3", seq_nat_1[2])  # host1 -> server2
+    set_match_egress_nat_ip(p4info_helper, nat1, "140.116.0.2", 2222, "10.0.2.2", 22222, "140.116.0.3", seq_nat_1[3])  # host2 -> server2
 
-    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 3333, "140.116.0.4", seq_nat_2[0])  # host3 -> server1
-    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, "140.116.0.4", seq_nat_2[1])  # host4 -> server1
-    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, "140.116.0.4", seq_nat_2[2])  # host3 -> server2
-    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, "140.116.0.4", seq_nat_2[3])  # host4 -> server2
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 3333, "192.168.3.3", 11111, "140.116.0.4", seq_nat_2[0])  # host3 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.1", 4444, "192.168.4.4", 11111, "140.116.0.4", seq_nat_2[1])  # host4 -> server1
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 3333, "192.168.3.3", 22222, "140.116.0.4", seq_nat_2[2])  # host3 -> server2
+    set_match_egress_nat_ip(p4info_helper, nat2, "140.116.0.2", 4444, "192.168.4.4", 22222, "140.116.0.4", seq_nat_2[3])  # host4 -> server2
 
     # # match_sender
     set_match_sender(p4info_helper, nat1, "10.0.1.1", 0)
@@ -364,17 +374,79 @@ def main(p4info_file_path, bmv2_file_path):
             # counter += 1
             # sleep(1)
 
-            digests = nat1.DigestList()
-            print digests.WhichOneof('update')=='digest'
-            print 'digest = ', digests
-            # if digests.WhichOneof('update')=='digest':
-            #     print("Received DigestList message")
-            #     digest = digests.digest
-            #     digest_name = p4info_helper.get_digests_name(digest.digest_id)
-            #     print "===============================" 
-            #     print "Digest name: ", digest_name 
-            #     print "List ID: ", digest.digest_id
+            digests_nat1 = nat1.DigestList()
+            digests_nat2 = nat2.DigestList()
+            print '[ Controller & While ]', digests_nat1.WhichOneof('update')=='digest', digests_nat1.WhichOneof('update'), \
+                                            digests_nat2.WhichOneof('update'), digests_nat2.WhichOneof('update')=='digest'
+            if digests_nat1.WhichOneof('update')=='digest':
+                print("Received DigestList message")
+                digest = digests_nat1.digest
+                digest_name = p4info_helper.get_digests_name(digest.digest_id)
+                print "===============================" 
+                print "Digest name: ", digest_name 
+                print "List ID: ", digest.digest_id
+                print 'digest = ', digests_nat1
+                print "===============================" 
+                counter = 1
+                for members in digest.data:
+                        #print members
+                        if members.WhichOneof('data')=='struct':
+                            # print byte_pbyte(members.struct.members[0].bitstring)
+                            # print '[ in loop ]', members, type(members), len(members)
+                            if members.struct.members[0].WhichOneof('data') == 'bitstring':
+                                    othersideIP = prettify(members.struct.members[0].bitstring)
+                            if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                                    hostIP = prettify(members.struct.members[1].bitstring)
+                            if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                                    NATIP = prettify(members.struct.members[2].bitstring)
+                            if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                                    othersidePort = int_prettify(members.struct.members[3].bitstring)
+                            if members.struct.members[4].WhichOneof('data') == 'bitstring':
+                                    hostPort = int_prettify(members.struct.members[4].bitstring)
+                            if members.struct.members[5].WhichOneof('data') == 'bitstring':
+                                    candidatePort = int_prettify(members.struct.members[5].bitstring)
 
+                            print '[ in loop NAT1 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
+                                    % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+
+                            # set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, hostPort)
+                            # set_match_egress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, NATIP, candidatePort)
+            
+            if digests_nat2.WhichOneof('update')=='digest':
+                print("Received DigestList message")
+                digest = digests_nat2.digest
+                digest_name = p4info_helper.get_digests_name(digest.digest_id)
+                print "===============================" 
+                print "Digest name: ", digest_name 
+                print "List ID: ", digest.digest_id
+                print 'digest = ', digests_nat2
+                print "===============================" 
+                counter = 1
+                for members in digest.data:
+                        #print members
+                        if members.WhichOneof('data')=='struct':
+                            # print byte_pbyte(members.struct.members[0].bitstring)
+                            # print '[ in loop ]', members, type(members), len(members)
+                            if members.struct.members[0].WhichOneof('data') == 'bitstring':
+                                    othersideIP = prettify(members.struct.members[0].bitstring)
+                            if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                                    hostIP = prettify(members.struct.members[1].bitstring)
+                            if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                                    NATIP = prettify(members.struct.members[2].bitstring)
+                            if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                                    othersidePort = int_prettify(members.struct.members[3].bitstring)
+                            if members.struct.members[4].WhichOneof('data') == 'bitstring':
+                                    hostPort = int_prettify(members.struct.members[4].bitstring)
+                            if members.struct.members[5].WhichOneof('data') == 'bitstring':
+                                    candidatePort = int_prettify(members.struct.members[5].bitstring)
+
+                            print '[ in loop NAT2 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
+                                    % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+
+                            # set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, hostIP, hostPort)
+                            # set_match_egress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, NATIP, candidatePort)
+
+                            
     except KeyboardInterrupt:
         print " Shutting down."
     except grpc.RpcError as e:
