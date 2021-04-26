@@ -4,6 +4,7 @@ import grpc
 import os
 import sys
 import random
+import threading
 from time import sleep
 
 # Import P4Runtime lib from parent utils dir
@@ -14,6 +15,7 @@ sys.path.append(
 import p4runtime_lib.bmv2
 # from p4runtime_lib.error_utils import printGrpcError
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
+from p4.v1 import p4runtime_pb2
 import p4runtime_lib.helper
 
 global seq_nat_1, seq_index_1, seq_last_index_1, \
@@ -322,6 +324,50 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
     
     #     set_Src_port(p4info_helper, nat2, i, seq_nat_2[i], 2)
 
+digests_nat1 = p4runtime_pb2.StreamMessageRequest()
+digests_nat2 = p4runtime_pb2.StreamMessageRequest()
+
+def digest_threading(whichNAT, nat, p4info_helper):
+    global digests_nat1, digests_nat2
+    if whichNAT == 1:
+        digests_nat1 = nat.DigestList()
+    elif whichNAT == 2:
+        digests_nat2 = nat.DigestList()
+
+    # if raw_digest.WhichOneof('update')=='digest':
+    #     print("Received DigestList message")
+    #     digest = raw_digest.digest
+    #     digest_name = p4info_helper.get_digests_name(digest.digest_id)
+    #     print "===============================" 
+    #     print "Digest name: ", digest_name 
+    #     print "List ID: ", digest.digest_id
+    #     print 'digest = ', raw_digest
+    #     print "===============================" 
+    #     counter = 1
+    #     for members in digest.data:
+    #         #print members
+    #         if members.WhichOneof('data')=='struct':
+    #             # print byte_pbyte(members.struct.members[0].bitstring)
+    #             # print '[ in loop ]', members, type(members), len(members)
+    #             if members.struct.members[0].WhichOneof('data') == 'bitstring':
+    #                     othersideIP = prettify(members.struct.members[0].bitstring)
+    #             if members.struct.members[1].WhichOneof('data') == 'bitstring':
+    #                     hostIP = prettify(members.struct.members[1].bitstring)
+    #             if members.struct.members[2].WhichOneof('data') == 'bitstring':
+    #                     NATIP = prettify(members.struct.members[2].bitstring)
+    #             if members.struct.members[3].WhichOneof('data') == 'bitstring':
+    #                     othersidePort = int_prettify(members.struct.members[3].bitstring)
+    #             if members.struct.members[4].WhichOneof('data') == 'bitstring':
+    #                     hostPort = int_prettify(members.struct.members[4].bitstring)
+    #             if members.struct.members[5].WhichOneof('data') == 'bitstring':
+    #                     candidatePort = int_prettify(members.struct.members[5].bitstring)
+
+    #             print '[ in loop NAT1 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
+    #                     % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+
+    #             # set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, hostPort)
+    #             # set_match_egress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, NATIP, candidatePort)
+
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
@@ -374,10 +420,25 @@ def main(p4info_file_path, bmv2_file_path):
             # counter += 1
             # sleep(1)
 
-            digests_nat1 = nat1.DigestList()
-            digests_nat2 = nat2.DigestList()
-            print '[ Controller & While ]', digests_nat1.WhichOneof('update')=='digest', digests_nat1.WhichOneof('update'), \
-                                            digests_nat2.WhichOneof('update'), digests_nat2.WhichOneof('update')=='digest'
+            thread1 = threading.Thread(target=digest_threading, args=(1, nat1, p4info_helper))
+            thread2 = threading.Thread(target=digest_threading, args=(2, nat2, p4info_helper))
+
+            thread1.start()
+            thread2.start()
+
+            thread1.join()
+            print 'Thread1 finish'
+            thread2.join()
+            print 'Thread2 finish'
+
+            print '[ Controller NAT1 ]', digests_nat1, digests_nat1.WhichOneof('update')=='digest'
+            print '[ Controller NAT2 ]', digests_nat2, digests_nat2.WhichOneof('update')=='digest'
+
+            
+            # digests_nat1 = nat1.DigestList()
+            # digests_nat2 = nat2.DigestList()
+            # print '[ Controller & While ]', digests_nat1.WhichOneof('update')=='digest', digests_nat1.WhichOneof('update'), \
+            #                                 digests_nat2.WhichOneof('update'), digests_nat2.WhichOneof('update')=='digest'
             if digests_nat1.WhichOneof('update')=='digest':
                 print("Received DigestList message")
                 digest = digests_nat1.digest
