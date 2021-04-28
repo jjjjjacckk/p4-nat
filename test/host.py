@@ -23,7 +23,7 @@ header p2pEst_t {
     bit<1>  direction;          // transmittion direction of packet
                                 // 1. to server = 0, build connection
                                 // 2. to host   = 1, return information from server
-    bit<11>  whom2Connect;       // specify the host to connect to
+    bit<11> whom2Connect;       // specify the host to connect to
                                 // 0 = h1, 1 = h2, 2 = h3, 3 = h4
     bit<4>  isEstPacket;        // 0 = is normal packet; 1 = packet for establish connection
 }
@@ -34,15 +34,15 @@ isDoneSniff = False
 class p2pEst(Packet):
     name = 'p2pEst'
     fields_desc = [
-        IPField("p2pOthersideIP", "140.116.0.4"),
-        ShortField("p2pOthersidePort", 6789),
-        IPField("selfNATIP", "140.116.0.3"),
-        ShortField("candidatePort", 14325),
+        IPField("p2pOthersideIP", "0.0.0.0"),
+        ShortField("p2pOthersidePort", 0),
+        IPField("selfNATIP", "0.0.0.0"),
+        ShortField("candidatePort", 0),
         ShortField("matchSrcPortIndex", 0),
         ShortField("whoAmI", 1),
-        BitField("direction", 1, 1),
+        BitField("direction", 0, 1),
         BitField("whom2Connect", 0, 11),
-        BitField("isEstPacket", 1, 4),
+        BitField("isEstPacket", 0, 4),
     ]
 
 def reformP2PEst(packetRawLoad):
@@ -105,6 +105,18 @@ def handle_pkt(pkt):
         pkt /= Raw(load=segment['msg'])
         print '[ After ]'
         pkt.show()
+
+
+        # wait for otherside to add table entry
+        sleep(2)
+
+        # FIXME: fix here!!!
+        new_pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
+        new_pkt = new_pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=2, direction=0, isEstPacket=1) / sys.argv[2]
+        new_pkt.show()
+        sendp(new_pkt, iface=iface, verbose=False)
+
+
     #    hexdump(pkt)
         sys.stdout.flush()
         print 'HERE'
@@ -133,7 +145,7 @@ def main():
 
     # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
     # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
-    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst() / sys.argv[2]
+    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=2, direction=0, isEstPacket=1) / sys.argv[2]
     pkt.show()
     sendp(pkt, iface=iface, verbose=False)
 

@@ -31,14 +31,14 @@ header p2pEst_t {
 class p2pEst(Packet):
     name = 'p2pEst'
     fields_desc = [
-        IPField("p2pOthersideIP", "140.116.0.4"),
-        ShortField("p2pOthersidePort", 6789),
-        IPField("selfNATIP", "140.116.0.3"),
-        ShortField("candidatePort", 14325),
-        ShortField("matchSrcPortIndex", 0),
-        ShortField("whoAmI", 1),
-        BitField("direction", 1, 1),
-        BitField("whom2Connect", 0, 11),
+        IPField("p2pOthersideIP", "0.0.0.0"),
+        ShortField("p2pOthersidePort", 0),
+        IPField("selfNATIP", "0.0.0.0"),        
+        ShortField("candidatePort", 0),
+        ShortField("matchSrcPortIndex", 0), 
+        ShortField("whoAmI", 1),                
+        BitField("direction", 0, 1),
+        BitField("whom2Connect", 2, 11),
         BitField("isEstPacket", 1, 4),
     ]
 
@@ -64,7 +64,8 @@ def main():
     #iface = get_if()
     dp = sys.argv[3]
     sp = sys.argv[4]
-    iface = sys.argv[5]
+    whom2Connect = sys.argv[5]
+    iface = sys.argv[6]
 
 
 
@@ -75,7 +76,7 @@ def main():
 
     # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
     # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
-    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst() / sys.argv[2]
+    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=int(whom2Connect)) / sys.argv[2]
     pkt.show()
     sendp(pkt, iface=iface, verbose=False)
 
