@@ -4,12 +4,15 @@ import sys
 import socket
 import random
 import struct
+import time
 
 from scapy.all import sendp, send, get_if_list, get_if_hwaddr
 from scapy.all import Packet
 from scapy.all import Ether, IP, UDP, TCP, Raw, ICMP
 from scapy.fields import BitField, IntField, ShortField, IPField
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
+
+index2addr = ["10.0.1.1", "10.0.2.2", "192.168.3.3", "192.168.4.4", "140.116.0.1", "140.116.0.2"]
 
 '''
 header p2pEst_t {
@@ -108,11 +111,11 @@ def handle_pkt(pkt):
 
 
         # wait for otherside to add table entry
-        sleep(2)
+        time.sleep(2)
 
-        # FIXME: fix here!!!
+        # FIXME: ADDR and other variable are not defined!!!
         new_pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
-        new_pkt = new_pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=2, direction=0, isEstPacket=1) / sys.argv[2]
+        new_pkt = new_pkt /IP(dst=index2addr[int(sys.argv[6])]) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=2, direction=0, isEstPacket=1) / sys.argv[2]
         new_pkt.show()
         sendp(new_pkt, iface=iface, verbose=False)
 
@@ -145,7 +148,7 @@ def main():
 
     # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
     # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
-    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=2, direction=0, isEstPacket=1) / sys.argv[2]
+    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=int(sys.argv[6]), direction=0, isEstPacket=1) / sys.argv[2]
     pkt.show()
     sendp(pkt, iface=iface, verbose=False)
 

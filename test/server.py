@@ -123,6 +123,7 @@ def handle_pkt(pkt):
                 # insert propriate information into p2pEst packet
                 ToWhom = num2host[pkt[p2pEst].whom2Connect]
                 sender = num2host[pkt[p2pEst].whoAmI]
+                print '[ Handle Packet ]', ToWhom, sender
                 backP2P = p2pEst( p2pOthersideIP=table[ToWhom][0], 
                                  p2pOthersidePort=table[ToWhom][1][sender], 
                                  selfNATIP=pkt[p2pEst].selfNATIP, 
