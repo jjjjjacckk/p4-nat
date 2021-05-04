@@ -110,8 +110,10 @@ def handle_pkt(pkt):
         pkt[UDP].remove_payload()
         pkt /= segment['packet']
         pkt /= Raw(load=segment['msg'])
-        print '[ Handle Packet ] old packet: '
+        print '[ Handle Packet ] old packet: START!'
         pkt.show()
+        print '[ Handle Packet ] old packet: END!\n'
+
 
         ToWhom = -1
         sender = -1
@@ -156,8 +158,9 @@ def handle_pkt(pkt):
                 print '[ Handle Packet ]', isDoneSniff_eth0, isDoneSniff_server1_eth1
                 new_pkt.remove_payload()
                 new_pkt = new_pkt / backIP / backUDP / backP2P / backMSG
-                print '[ Handle Packet ]'
+                print '[ Handle Packet ] new packet: START!'
                 new_pkt.show()
+                print '[ Handle Packet ] new packet: END!\n'
                 extractedP2P.append(new_pkt)
 
 
@@ -192,7 +195,7 @@ def sendBack(packet):
     sender_in = num2host[packet[p2pEst].whoAmI]
     receiver_in = num2host[packet[p2pEst].whom2Connect]
     print '[ Send Back ]', table[ sender_in ][1][ receiver_in ]
-    packet[p2pEst].p2pOthersidePort = table[ sender_in ][1][ receiver_in ]
+    packet[p2pEst].p2pOthersidePort = table[ receiver_in ][1][ sender_in ]
     print '[ Send Back ]'
     packet.show()
     print '\n'
@@ -226,68 +229,101 @@ def main():
 
     # receive from h1 (packet1)
     # receive from h2 (packet2)
-    "make sure both packet are received"
-    sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
-                                                        prn = handle_pkt,
-                                                        stop_filter = getIsDoneSniff_eth0))
-    sniff2 = threading.Thread(target=sniff, kwargs=dict(iface = "server1-eth1",
-                                                        prn = handle_pkt,
-                                                        stop_filter = getIsDoneSniff_server1_eth1))
-    sniff1.start()
-    sniff2.start()
+    # "make sure both packet are received"
 
-    sniff1.join()
-    sniff2.join()
+    while True:
+        if len(sys.argv) < 2:
+            print 'pass 1 arguments: "<nat>"\n"<nat>" = "nat1" or "nat2"'
+            exit(1)
+        else:
+            server = sys.argv[1]
+            if server != 'nat1' and server != 'nat2':
+                print 'specify "nat1" or "nat2" !'
+                exit(1)
+            else:
+                break
+        
+        
 
-    # make sure 2 packets are received
-    if len(extractedP2P) >= 2:
-        # extract packet 
-        packet1 = extractedP2P[-1]
-        packet2 = extractedP2P[-2]
 
-        print '[ in IF ] content of packet1: '
-        packet1.show()
-        print '\n[ in IF ] content of packet2: '
-        packet2.show()
-        print '\n-\n'
+    try:
+        while True:
+            print 'NAT starts successfully!'
 
-        sendBack(packet1)
-        print 'packet1 is sent!!'
-        sendBack(packet2)
-        print 'packet2 is sent!!'
+            if server == 'nat1':
+                sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
+                                                                    prn = handle_pkt,
+                                                                    stop_filter = getIsDoneSniff_eth0))
+                sniff2 = threading.Thread(target=sniff, kwargs=dict(iface = "server1-eth1",
+                                                                    prn = handle_pkt,
+                                                                    stop_filter = getIsDoneSniff_server1_eth1))
+            elif server == 'nat2':
+                sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
+                                                                    prn = handle_pkt,
+                                                                    stop_filter = getIsDoneSniff_eth0))
+                sniff2 = threading.Thread(target=sniff, kwargs=dict(iface = "server2-eth1",
+                                                                    prn = handle_pkt,
+                                                                    stop_filter = getIsDoneSniff_server1_eth1))
 
-        # # make sure the both got right candidatePort
-        # packet1[p2pEst].othersidePort = table[ packet1[p2pEst].whoAmI ][1][ packet1[p2pEst].whom2Connect ]
-        # packet2[p2pEst].othersidePort = table[ packet2[p2pEst].whoAmI ][1][ packet2[p2pEst].whom2Connect ]
+            sniff1.start()
+            sniff2.start()
 
-        # # revise packet[Ether] header and send back to host 
-        # if packet1[IP].dst == "140.116.0.3":
-        #     if packet[IP].src == "140.116.0.1":
-        #         packet1[p2pEst].whoAmI = 4
-        #     else:
-        #         packet1[p2pEst].whoAmI = 5
-            
-        #     packet1[Ether].src = get_if_hwaddr("eth0")
-        #     sendp(packet1, iface="eth0", verbose=False)
-        # else:
-        #     if packet[IP].src == "140.116.0.1":
-        #         packet1[p2pEst].whoAmI = 4
-        #         packet1[Ether].src = get_if_hwaddr("server1-eth1")
-        #         sendp(packet1, iface="server1-eth1", verbose=False)
-        #     elif packet[IP].src == "140.116.0.2":
-        #         packet1[p2pEst].whoAmI = 5
-        #         packet1[Ether].src = get_if_hwaddr("server2-eth1")
-        #         sendp(packet1, iface="server2-eth1", verbose=False)
+            sniff1.join()
+            sniff2.join()
 
-        # restore infos:
-        for i1 in range(0, 4):
-            for i2 in range(0, 4):
-                if i1 != i2:
-                    table[ num2host[i1] ][1][ i2 ] = -1
+            # make sure 2 packets are received
+            if len(extractedP2P) >= 2:
+                # extract packet 
+                packet1 = extractedP2P[-1]
+                packet2 = extractedP2P[-2]
 
-        del extractedP2P[:]
+                print '[ in IF ] content of packet1: START!'
+                packet1.show()
+                print '[ in IF ] content of packet1: END!\n'
+                print '\n[ in IF ] content of packet2: START!'
+                packet2.show()
+                print '\n[ in IF ] content of packet2: END!\n'
+                print '\n-\n'
 
-        print 'HERE!!!'
+                sendBack(packet1)
+                print 'packet1 is sent!!'
+                sendBack(packet2)
+                print 'packet2 is sent!!'
+
+                # # make sure the both got right candidatePort
+                # packet1[p2pEst].othersidePort = table[ packet1[p2pEst].whoAmI ][1][ packet1[p2pEst].whom2Connect ]
+                # packet2[p2pEst].othersidePort = table[ packet2[p2pEst].whoAmI ][1][ packet2[p2pEst].whom2Connect ]
+
+                # # revise packet[Ether] header and send back to host 
+                # if packet1[IP].dst == "140.116.0.3":
+                #     if packet[IP].src == "140.116.0.1":
+                #         packet1[p2pEst].whoAmI = 4
+                #     else:
+                #         packet1[p2pEst].whoAmI = 5
+                    
+                #     packet1[Ether].src = get_if_hwaddr("eth0")
+                #     sendp(packet1, iface="eth0", verbose=False)
+                # else:
+                #     if packet[IP].src == "140.116.0.1":
+                #         packet1[p2pEst].whoAmI = 4
+                #         packet1[Ether].src = get_if_hwaddr("server1-eth1")
+                #         sendp(packet1, iface="server1-eth1", verbose=False)
+                #     elif packet[IP].src == "140.116.0.2":
+                #         packet1[p2pEst].whoAmI = 5
+                #         packet1[Ether].src = get_if_hwaddr("server2-eth1")
+                #         sendp(packet1, iface="server2-eth1", verbose=False)
+
+                # restore infos:
+                for i1 in range(0, 4):
+                    for i2 in range(0, 4):
+                        if i1 != i2:
+                            table[ num2host[i1] ][1][ i2 ] = -1
+
+                del extractedP2P[:]
+
+                print 'Finish one connection!!!'
+    except KeyboardInterrupt:
+        print " Shutting down."
 
 if __name__ == '__main__':
     main()

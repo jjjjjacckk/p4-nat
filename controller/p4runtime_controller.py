@@ -21,7 +21,9 @@ import p4runtime_lib.helper
 global seq_nat_1, seq_index_1, seq_last_index_1, \
        seq_index_2, seq_nat_2, seq_last_index_2
 
-ip2host = {"10.0.1.1": 0, "10.0.2.2": 1, \
+NATHostPort_counter = {"h1": 0, "h2": 0, "h3":0, "h4": 0}
+index2host = ["h1", "h2", "h3", "h4", "server1", "server2"]
+ip2HostIndex = {"10.0.1.1": 0, "10.0.2.2": 1, \
            "192.168.3.3": 2, "192.168.4.4": 3, \
            "140.116.0.1": 4, "140.116.0.2": 5}
 
@@ -263,6 +265,10 @@ def WriteBasicRule(p4info_helper, nat1, nat2):
         set_ipv4_lpm(p4info_helper, nat1, '140.116.0.%d' % x, x+2)
         set_ipv4_lpm(p4info_helper, nat2, '140.116.0.%d' % x, x+2)
     
+    # deal with connection between nat1 and nat2
+    set_ipv4_lpm(p4info_helper, nat1, "140.116.0.4", 5)
+    set_ipv4_lpm(p4info_helper, nat2, "140.116.0.3", 5)
+
     # match_ingress_nat_ip
     set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 1111, seq_nat_1[0], "10.0.1.1", 11111)   # server1 -> h1
     set_match_ingress_nat_ip(p4info_helper, nat1, "140.116.0.1", 2222, seq_nat_1[1], "10.0.2.2", 11111)   # server1 -> h2
@@ -383,6 +389,25 @@ def digest_threading(whichNAT, nat, p4info_helper):
     #             # set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, hostPort)
     #             # set_match_egress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, NATIP, candidatePort)
 
+# def define_host_port(hostIP, othersideIP):
+#     # When creating connection between h1 and h3 (for example), 
+#     # we should establish ingress_nat and egress_nat to new port of 
+#     # h1 and h3.
+#     # (e.g.): h1 -> h3
+#     #   - h1 will open port 3333 for h3
+#     #   - h3 will open port 3333 for h1, too
+
+#     # rule:
+#     # - h1, h2:
+#     #   - to h3: port 3333
+#     #   - to h4: port 4444
+#     # - h3, h4:
+#     #   - to h1: port 3333
+#     #   - to h2: port 4444
+
+#     if hostIP == "10.0.0.1" and othersideIP
+
+
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
@@ -485,19 +510,22 @@ def main(p4info_file_path, bmv2_file_path):
                             print '[ in loop NAT1 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
                                     % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
 
+                            receiver = index2host[ip2HostIndex[hostIP]]
+                            print '[ in loop NAT1 ] receiver = ', receiver
                             # insert relational information
                             # ingress: 
                             # match_ingress_nat_ip
-                            set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, candidatePort, hostIP, hostPort)
-                            # match_sender
-                            set_match_sender(p4info_helper, nat1, hostIP, ip2host(hostIP))
+                            set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, candidatePort, hostIP, 33333 + 11111*NATHostPort_counter[receiver])
+                            # match_sender: already installed in initialization stage
                             # ipv4_lpm
-                            set_ipv4_lpm(p4info_helper, nat1, othersideIP, nat1Dst2EgressPort(othersideIP))
+                            # set_ipv4_lpm(p4info_helper, nat1, othersideIP, nat1Dst2EgressPort[othersideIP])
                             # send_frame: already installed in initialization stage
                             
                             # egress:
                             # match_egress_nat_ip
-                            set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, hostPort, NATIP, NATPort)
+                            set_match_egress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, 33333 + 11111*NATHostPort_counter[receiver], NATIP, candidatePort)
+                            NATHostPort_counter[receiver] += 1
+
                             # CandidatePort: already installed in initialization stage
                             # send_frame: already installed in initialization stage
                             # set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, hostPort)
@@ -534,19 +562,22 @@ def main(p4info_file_path, bmv2_file_path):
                             print '[ in loop NAT2 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
                                     % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
 
+                            receiver = index2host[ip2HostIndex[hostIP]]
+                            print '[ in loop NAT2 ] receiver = ', receiver
+
                             # insert relational information
                             # ingress:
                             # match_ingress_nat_ip
-                            set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, candidatePort, hostIP, hostPort)
-                            # match_sender
-                            set_match_sender(p4info_helper, nat2, hostIP, ip2host(hostIP))
+                            set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, candidatePort, hostIP, 33333 + 11111*NATHostPort_counter[receiver])
+                            # match_sender: already installed in initialization stage
                             # ipv4_lpm
-                            set_ipv4_lpm(p4info_helper, nat2, othersideIP, nat2Dst2EgressPort(othersideIP))
+                            # set_ipv4_lpm(p4info_helper, nat2, othersideIP, nat2Dst2EgressPort[othersideIP])
                             # send_frame: already installed in initialization stage
                             
                             # egress:
                             # match_egress_nat_ip
-                            set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, hostIP, hostPort, NATIP, NATPort)
+                            set_match_egress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, hostIP, 33333 + 11111*NATHostPort_counter[receiver], NATIP, candidatePort)
+                            NATHostPort_counter[receiver] += 1
                             # CandidatePort: already installed in initialization stage
                             # send_frame: already installed in initialization stage
 
@@ -583,3 +614,5 @@ if __name__ == '__main__':
 
     print 'args.p4info  = %s' % args.p4info 
     main(args.p4info, args.bmv2_json)
+
+    # FIXME: fix duplicate nat table entry issue

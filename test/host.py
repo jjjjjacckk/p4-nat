@@ -13,6 +13,18 @@ from scapy.fields import BitField, IntField, ShortField, IPField
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
 
 index2addr = ["10.0.1.1", "10.0.2.2", "192.168.3.3", "192.168.4.4", "140.116.0.1", "140.116.0.2"]
+index2host = ["h1", "h2", "h3", "h4", "server1", "server2"]
+
+ip2HostIndex = {"10.0.1.1": 0, "10.0.2.2": 1, \
+           "192.168.3.3": 2, "192.168.4.4": 3, \
+           "140.116.0.1": 4, "140.116.0.2": 5}
+
+connection_counter = 0      # record the index of connection
+                            # connection 0 = port 33333
+                            # connection 1 = port 44444
+
+resendPort = 0
+
 
 '''
 header p2pEst_t {
@@ -95,7 +107,7 @@ def getIsDoneSniff(x):
     return isDoneSniff
 
 def handle_pkt(pkt):
-    global isDoneSniff
+    global isDoneSniff, connection_counter, resendPort
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -106,18 +118,23 @@ def handle_pkt(pkt):
         pkt[UDP].remove_payload()
         pkt /= segment['packet']
         pkt /= Raw(load=segment['msg'])
-        print '[ After ]'
+        print '[ RECEIVE ] START!'
         pkt.show()
+        print '[ RECEIVE ] END!\n'
 
+        if pkt[p2pEst].isEstPacket == 1:
+            # wait for otherside to add table entry
+            time.sleep(2)
 
-        # wait for otherside to add table entry
-        time.sleep(2)
-
-        # FIXME: ADDR and other variable are not defined!!!
-        new_pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
-        new_pkt = new_pkt /IP(dst=index2addr[int(sys.argv[6])]) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=2, direction=0, isEstPacket=1) / sys.argv[2]
-        new_pkt.show()
-        sendp(new_pkt, iface=iface, verbose=False)
+            # FIXME: ADDR and other variable are not defined!!!
+            new_pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
+            print '[ HOST ] ', pkt[IP].dst, ip2HostIndex[pkt[IP].dst], index2host[ip2HostIndex[pkt[IP].dst]]
+            msg = "trials from " + index2host[ip2HostIndex[pkt[IP].dst]]
+            new_pkt = new_pkt / IP(dst=pkt[p2pEst].p2pOthersideIP) / UDP(dport=int(pkt[p2pEst].p2pOthersidePort), sport=int(resendPort)) / p2pEst(direction=0, isEstPacket=0) / msg
+            print '[ HOST: packet to be sent out! ] START! (connection check)'
+            new_pkt.show()
+            print '[ HOST: packet to be sent out! ] END! (connection check)\n'
+            sendp(new_pkt, iface='eth0', verbose=False)
 
 
     #    hexdump(pkt)
@@ -128,6 +145,7 @@ def handle_pkt(pkt):
         pkt.show2()
 
 def main():
+    global resendPort
 
     if len(sys.argv)<3:
         print 'pass 2 arguments: <destination> "<message>"'
@@ -137,20 +155,23 @@ def main():
     #iface = get_if()
     dp = sys.argv[3]
     sp = sys.argv[4]
-    iface = sys.argv[5]
+    resendPort = sys.argv[6]
 
 
 
 
-    print "sending on interface %s to %s" % (iface, str(addr))
+
+    print "sending on interface %s to %s" % ('eth0', str(addr))
     # print 'get_if_hwaddr(iface) ', get_if_hwaddr('eth0')
-    pkt =  Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
+    pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
 
     # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
     # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
-    pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=int(sys.argv[6]), direction=0, isEstPacket=1) / sys.argv[2]
+    pkt = pkt / IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=int(sys.argv[5]), direction=0, isEstPacket=1) / sys.argv[2]
+    print '[ HOST: packet to be sent out! ] START! (establish connection)'
     pkt.show()
-    sendp(pkt, iface=iface, verbose=False)
+    print '[ HOST: packet to be sent out! ] END! (establish connection)\n'
+    sendp(pkt, iface="eth0", verbose=False)
 
     if p2pEst in pkt:
         if pkt[p2pEst].isEstPacket:
