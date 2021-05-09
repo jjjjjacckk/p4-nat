@@ -3,6 +3,23 @@ pkg_info {
 }
 tables {
   preamble {
+    id: 33585671
+    name: "_check_if_from_host_ingress"
+    alias: "_check_if_from_host_ingress"
+  }
+  match_fields {
+    id: 1
+    name: "ipv4.srcAddr"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16784184
+  }
+  size: 1024
+}
+tables {
+  preamble {
     id: 33573970
     name: "send_info2controller"
     alias: "send_info2controller"
@@ -98,6 +115,46 @@ tables {
 }
 tables {
   preamble {
+    id: 33589080
+    name: "match_egress_nat_ip_method2"
+    alias: "match_egress_nat_ip_method2"
+  }
+  match_fields {
+    id: 1
+    name: "ipv4.dstAddr"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "udp.dstPort"
+    bitwidth: 16
+    match_type: EXACT
+  }
+  match_fields {
+    id: 3
+    name: "ipv4.srcAddr"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  match_fields {
+    id: 4
+    name: "udp.srcPort"
+    bitwidth: 16
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16817081
+  }
+  action_refs {
+    id: 16800567
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
+  }
+  size: 1024
+}
+tables {
+  preamble {
     id: 33561264
     name: "match_sender"
     alias: "match_sender"
@@ -134,7 +191,7 @@ tables {
   action_refs {
     id: 16800567
   }
-  size: 12
+  size: 65536
 }
 tables {
   preamble {
@@ -282,21 +339,9 @@ actions {
 }
 actions {
   preamble {
-    id: 16823885
-    name: "addCandidatePort"
-    alias: "addCandidatePort"
-  }
-  params {
-    id: 1
-    name: "CandidatePort"
-    bitwidth: 16
-  }
-}
-actions {
-  preamble {
-    id: 16813982
-    name: "set_CandidatePortIndex"
-    alias: "set_CandidatePortIndex"
+    id: 16827362
+    name: "_DIGEST_AddNewNATEntry"
+    alias: "_DIGEST_AddNewNATEntry"
   }
 }
 actions {
@@ -314,6 +359,25 @@ actions {
     id: 2
     name: "udpPort"
     bitwidth: 16
+  }
+}
+actions {
+  preamble {
+    id: 16823885
+    name: "addCandidatePort"
+    alias: "addCandidatePort"
+  }
+  params {
+    id: 1
+    name: "CandidatePort"
+    bitwidth: 16
+  }
+}
+actions {
+  preamble {
+    id: 16813982
+    name: "set_CandidatePortIndex"
+    alias: "set_CandidatePortIndex"
   }
 }
 actions {
@@ -355,7 +419,64 @@ digests {
     }
   }
 }
+digests {
+  preamble {
+    id: 385922458
+    name: "AddNewNATEntry"
+    alias: "AddNewNATEntry"
+  }
+  type_spec {
+    struct {
+      name: "AddNewNATEntry"
+    }
+  }
+}
 type_info {
+  structs {
+    key: "AddNewNATEntry"
+    value {
+      members {
+        name: "othersideIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "hostIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "othersidePort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 16
+            }
+          }
+        }
+      }
+      members {
+        name: "hostPort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 16
+            }
+          }
+        }
+      }
+    }
+  }
   structs {
     key: "CandidatePortDigest"
     value {

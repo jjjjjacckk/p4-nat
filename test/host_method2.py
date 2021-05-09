@@ -126,7 +126,7 @@ def handle_pkt(pkt):
             # wait for otherside to add table entry
             time.sleep(2)
 
-            # FIXME: ADDR and other variable are not defined!!!
+            
             new_pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
             print '[ HOST ] ', pkt[IP].dst, ip2HostIndex[pkt[IP].dst], index2host[ip2HostIndex[pkt[IP].dst]]
             msg = "trials from " + index2host[ip2HostIndex[pkt[IP].dst]]
@@ -150,6 +150,22 @@ def main():
     if len(sys.argv)<3:
         print 'pass 2 arguments: <destination> "<message>"'
         exit(1)
+
+    # query server1 : send back nat1 port info1
+    # query server2 : (analyse port assignment mode)
+    #   - send back otherside info:
+    #       1. assignment mode (basically is random)
+    #       2. otherside server1 port
+    #       3. otherside server2 port
+    # send 1000 packet to otherside:
+    #   - with same dst port
+    #   - 1000 src ip
+
+
+
+
+
+
 
     addr = socket.gethostbyname(sys.argv[1])
     #iface = get_if()

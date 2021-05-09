@@ -137,6 +137,13 @@ struct CandidatePortDigest {
     bit<16> NATPort;        // NAT Port
 }
 
+struct AddNewNATEntry {
+    bit<32> othersideIP;    
+    bit<32> hostIP;         // local IP
+    bit<16> othersidePort;  
+    bit<16> hostPort;       // local Port
+}
+
 parser ParserImpl(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     @name(".start") state start {
         transition parse_ethernet;
@@ -192,16 +199,15 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
 
         src_index.write(0, hdr.p2pEst.matchSrcPortIndex+1);
     }
-    // @name("._DIGEST_Egress") action _DIGEST_Egress() {
-    //     // Digest info to controller to add new EgressTaleEntry
-    //     // Digest = send info to controller
-    //     digest<CandidatePortDigest>( (bit<32>)1024, { hdr.ipv4.dstAddr,
-    //                                                   (bit<32>)hdr.udp.dstPort,
-    //                                                   hdr.ipv4.srcAddr,  // host IP
-    //                                                   (bit<32>)hdr.udp.srcPort,      // host port
-    //                                                   hdr.p2pEst.selfNATIP,
-    //                                                   (bit<32>)hdr.p2pEst.candidatePort });
-    // }
+    @name("._DIGEST_AddNewNATEntry") action _DIGEST_AddNewNATEntry() {
+        // Digest info to controller to add new EgressTaleEntry
+        // Digest = send info to controller
+        digest<AddNewNATEntry>( (bit<32>)1024, { hdr.ipv4.dstAddr,  // othersideIP
+                                                 hdr.ipv4.srcAddr,  // hostIP
+                                                 hdr.udp.dstPort,   // othersidePort
+                                                 hdr.udp.srcPort    // hostPort
+                                                });
+    }
     @name(".rewrite_srcAddrUDP") action rewrite_srcAddrUDP(bit<32> ipv4Addr, bit<16> udpPort) {
         // NAT translation
         hdr.ipv4.srcAddr = ipv4Addr;
@@ -220,6 +226,15 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
     @name("._drop") action _drop() {
         mark_to_drop(standard_metadata);
     }
+    @name("._check_if_from_host_egress") table _check_if_from_host_egress {
+        actions = { 
+            _DIGEST_AddNewNATEntry; 
+            NoAction;
+        }
+        key = { hdr.ipv4.srcAddr : exact; }
+        size = 1024;
+        default_action = NoAction();
+    }
     @name(".CandidatePort") table CandidatePort {
         actions = {
             addCandidatePort;
@@ -228,7 +243,7 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
         key = {
             hdr.p2pEst.matchSrcPortIndex: exact;
         }
-        size = 12;      // size of table entry = store 10 candidate port
+        size = 65536;      // size of table entry = store 10 candidate port
         default_action = NoAction();
     }
     @name(".match_egress_nat_ip") table match_egress_nat_ip {
@@ -266,7 +281,7 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
     apply {
         if (hdr.udp.isValid()) {
             if (match_egress_nat_ip.apply().hit) {
-                // insert Candidate port (host -> server period)
+                // insert Candidate port (host -> server period: method 1)
                 if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 4w1) {
                     // insert candidate port information 
                     set_CandidatePortIndex();
@@ -275,16 +290,21 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
                     // insert self NAT IP
                     hdr.p2pEst.selfNATIP = hdr.ipv4.srcAddr;
                 }
+            } else {
+                // add new rule (host -> server period: method 2)
+                // _check_if_from_host_egress.apply();
+                // if (_check_if_from_host.apply().hit) {
+                    // set AddNewNATEntry Digest to controller
+                    // when finish Digest -> recall 
+                    
+                    // FIXME: 
+                    // cannot apply a table in a controller apply section twice!
+                    // for performance reason (hardware guaranteed) and graphical representation issue
+                    // for more detail, consult the website down below:
+                    // -> https://github.com/p4lang/p4c/issues/457 
+                    // match_egress_nat_ip.apply();
+                // }
             }
-            // if (match_egress_nat_ip.apply().hit == false) {
-            //     if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 7w1) {
-            //         // insert candidate port information 
-            //         set_CandidatePortIndex();
-            //         CandidatePort.apply();
-            //     }
-            //     _DIGEST_Egress();               // send port informations to controller to add NAT table entry
-            //     // 這邊會不會有先後的問題！
-            //     match_egress_nat_ip.apply();    // to evoke "rewrite_srcAddrUDP()"
         }
         send_frame.apply();
     }
@@ -330,6 +350,28 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                                                       hdr.p2pEst.candidatePort         // Candidate Port for this connection
                                                     });
     }
+    @name("._DIGEST_AddNewNATEntry") action _DIGEST_AddNewNATEntry() {
+        // Digest info to controller to add new EgressTaleEntry
+        // Digest = send info to controller
+        digest<AddNewNATEntry>( (bit<32>)1024, { hdr.ipv4.dstAddr,  // othersideIP
+                                                 hdr.ipv4.srcAddr,  // hostIP
+                                                 hdr.udp.dstPort,   // othersidePort
+                                                 hdr.udp.srcPort    // hostPort
+                                                });
+    }
+    @name("._check_if_from_host_ingress") table _check_if_from_host_ingress {
+        actions = { _drop; }
+        key = { hdr.ipv4.srcAddr : exact; }
+        size = 1024;
+        default_action = _drop();
+    }
+    @name(".rewrite_srcAddrUDP") action rewrite_srcAddrUDP(bit<32> ipv4Addr, bit<16> udpPort) {
+        // NAT translation
+        hdr.ipv4.srcAddr = ipv4Addr;
+        hdr.udp.srcPort = udpPort;
+        meta.meta.natForward = 1w1;
+    }
+  
     @name(".send_info2controller") table send_info2controller {
         actions = { _DIGEST_Ingress; }
         key = { }
@@ -364,6 +406,17 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             hdr.ipv4.srcAddr: exact;
             hdr.udp.srcPort: exact;
             hdr.udp.dstPort: exact;
+        }
+    }
+    @name(".match_egress_nat_ip_method2") table match_egress_nat_ip_method2 {
+        actions = {
+            rewrite_srcAddrUDP;
+        }
+        key = {
+            hdr.ipv4.dstAddr: exact;
+            hdr.udp.dstPort: exact;
+            hdr.ipv4.srcAddr: exact;
+            hdr.udp.srcPort: exact;
         }
     }
     @name(".rev_nat_tcp") table rev_nat_tcp {
@@ -402,17 +455,27 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         // send_info2controller.apply();
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 8w0) {
             if (hdr.udp.isValid()) {
-                if (hdr.p2pEst.isValid()) {
-                    if (match_ingress_nat_ip.apply().hit == false) {
+                // for method 1
+                if (match_ingress_nat_ip.apply().hit == false) {
+                    if (hdr.p2pEst.isValid()) {
                         // if the packet is from the server and not recognized by NAT
                         // , mark the packet as drop
-                        if (hdr.p2pEst.direction == 1w1) {
+                        if (hdr.p2pEst.direction == 1w1) 
                             _drop();
-                        } 
-                        else {
+                        else 
                             match_sender.apply();
-                        }
                     } else {
+                        // for method 2 : add match_ingress_nat_ip 
+                        _check_if_from_host_ingress.apply();
+
+                        // for method 2:
+                        // when egress_nat table is miss, digest to controller to add new table entry
+                        if (match_egress_nat_ip_method2.apply().hit == false)
+                            _DIGEST_AddNewNATEntry();
+                    }
+                } else {
+                    if (hdr.p2pEst.isValid()) {
+                        // for method 1
                         // return from server of Establish P2P connection
                         if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1) 
                             send_info2controller.apply();
@@ -494,7 +557,7 @@ V1Switch(
     ParserImpl(), 
     verifyChecksum(), 
     MyIngress(), 
-    MyEgress(), 
+    MyEgress(),
     computeChecksum(), 
     DeparserImpl()
 ) main;
