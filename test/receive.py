@@ -82,6 +82,8 @@ def handle_pkt(pkt):
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
+
+        print '[ Before ]'
         pkt.show()
 
         segment = reformP2PEst(pkt[Raw].load)

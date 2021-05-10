@@ -86,8 +86,51 @@ def reformP2PEst(packetRawLoad):
                                   isEstPacket=param_isEstPacket),
                  'msg': packetRawLoad[18:] }
 
-def reformMSG(packetRawLoad):
-    print packetRawLoad
+def ReformSplitMSG(packet):
+    # deal with '\x00\x00' in pkt[Raw].load
+    # which will eat two digit of original pkt[Raw].load
+    if len(packet[Raw].load) >= 14:
+        packet[Raw].load = packet[Raw].load[0:14] + packet[Raw].load[16:]
+
+    # fill in infos
+    # (e.g.) outcome = {'2server1', '-1', '2server2', '-1', '2serverIP', '', 'who', ''}
+    outcome = []
+    for i in packet[Raw].load.split(';'):
+        temp = i.split('=')
+        outcome.append(temp[0])
+        outcome.append(temp[1])
+        # info[temp[0]] = temp[1]
+    
+    outcome[1] = packet[UDP].sport
+    new_msg = ''
+
+    for i in range(0, 6, 2):
+        new_msg += (str(outcome[i]) + '=' + str(outcome[i+1]) + ';')
+    
+    new_msg += (str(outcome[6]) + '=' + str(outcome[7]))
+    packet[Raw].load = new_msg
+
+    return packet
+
+def swapSenderReceiver(packet):
+    print '[ swapSenderReceiver ]'
+    packet.show()
+    print packet[UDP].sport, packet[UDP].dport
+
+    etherLayer = Ether(src=get_if_hwaddr('eth0'), dst='ff:ff:ff:ff:ff:ff')
+    new_IP = IP(src=packet[IP].dst, dst=packet[IP].src)
+    new_UDP = UDP(sport=packet[UDP].dport, dport=packet[UDP].sport)
+    msg = packet[Raw]
+
+    etherLayer.remove_payload()
+    etherLayer = etherLayer / new_IP / new_UDP / msg
+    
+    print '[ swapSenderReceiver ]'
+    etherLayer.show()
+
+
+    return etherLayer
+
     # ToServer1 = 0
     # ToServer2 = 0
     # ToServerIP = ''
@@ -104,7 +147,7 @@ def reformMSG(packetRawLoad):
 
     # for i in range(34, 39):
     #     ToServer1.append(ord(packetRawLoad[i]))
-
+    
 
 def insertP2PInfo(packet):
     if packet[p2pEst].isEstPacket == 1:
@@ -113,79 +156,119 @@ def insertP2PInfo(packet):
 
 isDoneSniff_eth0 = False
 isDoneSniff_server1_eth1 = False
+isDoneSniff_server2_eth1 = False
 extractedP2P = []
 Index_PacketFromClient = 0
 Index_PacketFromServer = 1
 
-def handle_pkt(pkt):
+def handle_pkt_eth0(pkt):
     global extractedP2P, isDoneSniff_eth0, isDoneSniff_server1_eth1
 
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
-        print "got a packet"
-        pkt.show()
+        if p2pEst not in pkt:
 
-        print  repr(pkt[Raw])
+            print "got a packet"
+            print '[ Before ]'
+            pkt.show()
+            print pkt[UDP].sport, pkt[UDP].dport
 
-        # pkt[UDP].remove_payload()
-        # pkt /= segment['packet']
-        # pkt /= Raw(load=segment['msg'])
-        # print '[ Handle Packet ] old packet: START!'
-        # pkt.show()
-        # print '[ Handle Packet ] old packet: END!\n'
-
-
-        # ToWhom = -1
-        # sender = -1
-        # if p2pEst in pkt:
-        #     print '[ Handle Packet ]', pkt[p2pEst].isEstPacket, pkt[p2pEst].isEstPacket==1
-        #     if pkt[p2pEst].isEstPacket == 1:
-        #         # extractP2P: store new packet
-
-        #         # insert propriate information into p2pEst packet
-        #         ToWhom = num2host[pkt[p2pEst].whom2Connect]
-        #         sender = num2host[pkt[p2pEst].whoAmI]
-        #         print '[ Handle Packet ]', ToWhom, sender
-        #         backP2P = p2pEst( p2pOthersideIP=table[ToWhom][0], 
-        #                          p2pOthersidePort=table[ToWhom][1][sender], 
-        #                          selfNATIP=pkt[p2pEst].selfNATIP, 
-        #                          candidatePort=pkt[p2pEst].candidatePort, 
-        #                          matchSrcPortIndex=pkt[p2pEst].matchSrcPortIndex, 
-        #                          whoAmI=pkt[p2pEst].whoAmI,
-        #                          direction=1, 
-        #                          whom2Connect=pkt[p2pEst].whom2Connect, 
-        #                          isEstPacket=1)
-        #         table[sender][1][ToWhom] = pkt[p2pEst].candidatePort
-        #         print '[ Handle Packet ]', sender, ToWhom, table[sender][1][ToWhom], table[sender][1][ToWhom]==-1
-
-        #         # insert send back information
-        #         new_pkt = pkt[Ether]
-        #         backIP = IP(dst=pkt[IP].src)
-        #         backUDP = UDP(sport=pkt[UDP].dport, dport=pkt[UDP].sport)
-
-        #         print '[ Handle Packet ]', pkt[IP].dst
-                
-        #         if pkt[IP].dst == "140.116.0.1":
-        #             backMSG = "from server1"
-        #         elif pkt[IP].dst == "140.116.0.2":
-        #             backMSG = "from server2"
-
-        #         if pkt[IP].src == "140.116.0.3":
-        #             isDoneSniff_eth0 = True
-        #         elif pkt[IP].src == "140.116.0.4":
-        #             isDoneSniff_server1_eth1 = True
-
-        #         print '[ Handle Packet ]', isDoneSniff_eth0, isDoneSniff_server1_eth1
-        #         new_pkt.remove_payload()
-        #         new_pkt = new_pkt / backIP / backUDP / backP2P / backMSG
-        #         print '[ Handle Packet ] new packet: START!'
-        #         new_pkt.show()
-        #         print '[ Handle Packet ] new packet: END!\n'
-        #         extractedP2P.append(new_pkt)
+            print '[ After ]'
+            pkt = ReformSplitMSG(pkt)
+            pkt.show()
+            print pkt[UDP].sport, pkt[UDP].dport
 
 
-        # hexdump(pkt)
-        sys.stdout.flush()
+            # # send back to host
+            pkt = swapSenderReceiver(pkt)
+            print '[ After2 ]'
+            pkt.show()
+            sendp(pkt, iface='eth0', verbose=False)
+
+            isDoneSniff_eth0 = True
+
+            # hexdump(pkt)
+            sys.stdout.flush()
+
+            # print  repr(pkt[Raw]), type(pkt[Raw])
+            # print len(pkt[Raw])
+            # print '[ Content ]'
+            # print pkt[Raw].load
+            # # print repr(pkt[Raw][0][15])
+            # # for i in pkt[Raw]:
+            # #     print 'pkt[Raw] = ', i
+
+            # raw = pkt[Raw]
+            # if len(raw.load) >= 14:
+            #     raw.load = raw.load[0:14] + raw.load[16:]
+
+            # new_pkt = pkt
+            # new_pkt[UDP].remove_payload()
+            # new_pkt = new_pkt / raw
+            # new_pkt.show2()
+
+
+            # pkt[UDP].remove_payload()
+            # pkt /= segment['packet']
+            # pkt /= Raw(load=segment['msg'])
+            # print '[ Handle Packet ] old packet: START!'
+            # pkt.show()
+            # print '[ Handle Packet ] old packet: END!\n'
+
+
+            # ToWhom = -1
+            # sender = -1
+            # if p2pEst in pkt:
+            #     print '[ Handle Packet ]', pkt[p2pEst].isEstPacket, pkt[p2pEst].isEstPacket==1
+            #     if pkt[p2pEst].isEstPacket == 1:
+            #         # extractP2P: store new packet
+
+            #         # insert propriate information into p2pEst packet
+            #         ToWhom = num2host[pkt[p2pEst].whom2Connect]
+            #         sender = num2host[pkt[p2pEst].whoAmI]
+            #         print '[ Handle Packet ]', ToWhom, sender
+            #         backP2P = p2pEst( p2pOthersideIP=table[ToWhom][0], 
+            #                          p2pOthersidePort=table[ToWhom][1][sender], 
+            #                          selfNATIP=pkt[p2pEst].selfNATIP, 
+            #                          candidatePort=pkt[p2pEst].candidatePort, 
+            #                          matchSrcPortIndex=pkt[p2pEst].matchSrcPortIndex, 
+            #                          whoAmI=pkt[p2pEst].whoAmI,
+            #                          direction=1, 
+            #                          whom2Connect=pkt[p2pEst].whom2Connect, 
+            #                          isEstPacket=1)
+            #         table[sender][1][ToWhom] = pkt[p2pEst].candidatePort
+            #         print '[ Handle Packet ]', sender, ToWhom, table[sender][1][ToWhom], table[sender][1][ToWhom]==-1
+
+            #         # insert send back information
+            #         new_pkt = pkt[Ether]
+            #         backIP = IP(dst=pkt[IP].src)
+            #         backUDP = UDP(sport=pkt[UDP].dport, dport=pkt[UDP].sport)
+
+            #         print '[ Handle Packet ]', pkt[IP].dst
+                    
+            #         if pkt[IP].dst == "140.116.0.1":
+            #             backMSG = "from server1"
+            #         elif pkt[IP].dst == "140.116.0.2":
+            #             backMSG = "from server2"
+
+            #         if pkt[IP].src == "140.116.0.3":
+            #             isDoneSniff_eth0 = True
+            #         elif pkt[IP].src == "140.116.0.4":
+            #             isDoneSniff_server1_eth1 = True
+
+            #         print '[ Handle Packet ]', isDoneSniff_eth0, isDoneSniff_server1_eth1
+            #         new_pkt.remove_payload()
+            #         new_pkt = new_pkt / backIP / backUDP / backP2P / backMSG
+            #         print '[ Handle Packet ] new packet: START!'
+            #         new_pkt.show()
+            #         print '[ Handle Packet ] new packet: END!\n'
+            #         extractedP2P.append(new_pkt)
+
+            # hexdump(pkt)
+            # sys.stdout.flush()
+
+
+
     elif ICMP in pkt:
         pkt.show2()
 
@@ -198,6 +281,250 @@ def handle_pkt(pkt):
     # if sender != -1 and ToWhom != -1:
     #     if table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1:
     #         isDoneSniff_eth0 = isDoneSniff_server1_eth1 = True
+
+def handle_pkt_server1_eth1(pkt):
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server1_eth1
+
+    # if TCP in pkt and pkt[TCP].dport == 1234:
+    if UDP in pkt :
+        if p2pEst not in pkt:
+
+            print "got a packet"
+            print '[ Before ]'
+            pkt.show()
+            print pkt[UDP].sport, pkt[UDP].dport
+
+            print '[ After ]'
+            pkt = ReformSplitMSG(pkt)
+            pkt.show()
+            print pkt[UDP].sport, pkt[UDP].dport
+
+
+            # # send back to host
+            pkt = swapSenderReceiver(pkt)
+            print '[ After2 ]'
+            pkt.show()
+            sendp(pkt, iface='server1-eth1', verbose=False)
+
+            isDoneSniff_server1_eth1 = True
+
+            # hexdump(pkt)
+            sys.stdout.flush()
+
+            # print  repr(pkt[Raw]), type(pkt[Raw])
+            # print len(pkt[Raw])
+            # print '[ Content ]'
+            # print pkt[Raw].load
+            # # print repr(pkt[Raw][0][15])
+            # # for i in pkt[Raw]:
+            # #     print 'pkt[Raw] = ', i
+
+            # raw = pkt[Raw]
+            # if len(raw.load) >= 14:
+            #     raw.load = raw.load[0:14] + raw.load[16:]
+
+            # new_pkt = pkt
+            # new_pkt[UDP].remove_payload()
+            # new_pkt = new_pkt / raw
+            # new_pkt.show2()
+
+
+            # pkt[UDP].remove_payload()
+            # pkt /= segment['packet']
+            # pkt /= Raw(load=segment['msg'])
+            # print '[ Handle Packet ] old packet: START!'
+            # pkt.show()
+            # print '[ Handle Packet ] old packet: END!\n'
+
+
+            # ToWhom = -1
+            # sender = -1
+            # if p2pEst in pkt:
+            #     print '[ Handle Packet ]', pkt[p2pEst].isEstPacket, pkt[p2pEst].isEstPacket==1
+            #     if pkt[p2pEst].isEstPacket == 1:
+            #         # extractP2P: store new packet
+
+            #         # insert propriate information into p2pEst packet
+            #         ToWhom = num2host[pkt[p2pEst].whom2Connect]
+            #         sender = num2host[pkt[p2pEst].whoAmI]
+            #         print '[ Handle Packet ]', ToWhom, sender
+            #         backP2P = p2pEst( p2pOthersideIP=table[ToWhom][0], 
+            #                          p2pOthersidePort=table[ToWhom][1][sender], 
+            #                          selfNATIP=pkt[p2pEst].selfNATIP, 
+            #                          candidatePort=pkt[p2pEst].candidatePort, 
+            #                          matchSrcPortIndex=pkt[p2pEst].matchSrcPortIndex, 
+            #                          whoAmI=pkt[p2pEst].whoAmI,
+            #                          direction=1, 
+            #                          whom2Connect=pkt[p2pEst].whom2Connect, 
+            #                          isEstPacket=1)
+            #         table[sender][1][ToWhom] = pkt[p2pEst].candidatePort
+            #         print '[ Handle Packet ]', sender, ToWhom, table[sender][1][ToWhom], table[sender][1][ToWhom]==-1
+
+            #         # insert send back information
+            #         new_pkt = pkt[Ether]
+            #         backIP = IP(dst=pkt[IP].src)
+            #         backUDP = UDP(sport=pkt[UDP].dport, dport=pkt[UDP].sport)
+
+            #         print '[ Handle Packet ]', pkt[IP].dst
+                    
+            #         if pkt[IP].dst == "140.116.0.1":
+            #             backMSG = "from server1"
+            #         elif pkt[IP].dst == "140.116.0.2":
+            #             backMSG = "from server2"
+
+            #         if pkt[IP].src == "140.116.0.3":
+            #             isDoneSniff_eth0 = True
+            #         elif pkt[IP].src == "140.116.0.4":
+            #             isDoneSniff_server1_eth1 = True
+
+            #         print '[ Handle Packet ]', isDoneSniff_eth0, isDoneSniff_server1_eth1
+            #         new_pkt.remove_payload()
+            #         new_pkt = new_pkt / backIP / backUDP / backP2P / backMSG
+            #         print '[ Handle Packet ] new packet: START!'
+            #         new_pkt.show()
+            #         print '[ Handle Packet ] new packet: END!\n'
+            #         extractedP2P.append(new_pkt)
+
+            # hexdump(pkt)
+            # sys.stdout.flush()
+
+
+
+    elif ICMP in pkt:
+        pkt.show2()
+
+    # print '[ handle pkt ]', sender, ToWhom, table[sender][1][ToWhom], table[ToWhom][1][sender], isDoneSniff_eth0, isDoneSniff_server1_eth1
+    # print '[ handle pkt ]', sender != -1, ToWhom != -1, sender != -1 and ToWhom != -1
+    # print '[ handle pkt ]', table[sender][1][ToWhom], table[ToWhom][1][sender]
+    # print '[ handle pkt ]', table[sender][1][ToWhom] != -1, table[ToWhom][1][sender] != -1, table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1, '\n'
+    
+    # # make sure to receive info of both side
+    # if sender != -1 and ToWhom != -1:
+    #     if table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1:
+    #         isDoneSniff_eth0 = isDoneSniff_server1_eth1 = True
+
+def handle_pkt_server2_eth1(pkt):
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server1_eth1
+
+    # if TCP in pkt and pkt[TCP].dport == 1234:
+    if UDP in pkt :
+        if p2pEst not in pkt:
+
+            print "got a packet"
+            print '[ Before ]'
+            pkt.show()
+            print pkt[UDP].sport, pkt[UDP].dport
+
+            print '[ After ]'
+            pkt = ReformSplitMSG(pkt)
+            pkt.show()
+            print pkt[UDP].sport, pkt[UDP].dport
+
+
+            # # send back to host
+            pkt = swapSenderReceiver(pkt)
+            print '[ After2 ]'
+            pkt.show()
+            sendp(pkt, iface='server2-eth1', verbose=False)
+
+            isDoneSniff_server1_eth1 = True
+
+            # hexdump(pkt)
+            sys.stdout.flush()
+
+            # print  repr(pkt[Raw]), type(pkt[Raw])
+            # print len(pkt[Raw])
+            # print '[ Content ]'
+            # print pkt[Raw].load
+            # # print repr(pkt[Raw][0][15])
+            # # for i in pkt[Raw]:
+            # #     print 'pkt[Raw] = ', i
+
+            # raw = pkt[Raw]
+            # if len(raw.load) >= 14:
+            #     raw.load = raw.load[0:14] + raw.load[16:]
+
+            # new_pkt = pkt
+            # new_pkt[UDP].remove_payload()
+            # new_pkt = new_pkt / raw
+            # new_pkt.show2()
+
+
+            # pkt[UDP].remove_payload()
+            # pkt /= segment['packet']
+            # pkt /= Raw(load=segment['msg'])
+            # print '[ Handle Packet ] old packet: START!'
+            # pkt.show()
+            # print '[ Handle Packet ] old packet: END!\n'
+
+
+            # ToWhom = -1
+            # sender = -1
+            # if p2pEst in pkt:
+            #     print '[ Handle Packet ]', pkt[p2pEst].isEstPacket, pkt[p2pEst].isEstPacket==1
+            #     if pkt[p2pEst].isEstPacket == 1:
+            #         # extractP2P: store new packet
+
+            #         # insert propriate information into p2pEst packet
+            #         ToWhom = num2host[pkt[p2pEst].whom2Connect]
+            #         sender = num2host[pkt[p2pEst].whoAmI]
+            #         print '[ Handle Packet ]', ToWhom, sender
+            #         backP2P = p2pEst( p2pOthersideIP=table[ToWhom][0], 
+            #                          p2pOthersidePort=table[ToWhom][1][sender], 
+            #                          selfNATIP=pkt[p2pEst].selfNATIP, 
+            #                          candidatePort=pkt[p2pEst].candidatePort, 
+            #                          matchSrcPortIndex=pkt[p2pEst].matchSrcPortIndex, 
+            #                          whoAmI=pkt[p2pEst].whoAmI,
+            #                          direction=1, 
+            #                          whom2Connect=pkt[p2pEst].whom2Connect, 
+            #                          isEstPacket=1)
+            #         table[sender][1][ToWhom] = pkt[p2pEst].candidatePort
+            #         print '[ Handle Packet ]', sender, ToWhom, table[sender][1][ToWhom], table[sender][1][ToWhom]==-1
+
+            #         # insert send back information
+            #         new_pkt = pkt[Ether]
+            #         backIP = IP(dst=pkt[IP].src)
+            #         backUDP = UDP(sport=pkt[UDP].dport, dport=pkt[UDP].sport)
+
+            #         print '[ Handle Packet ]', pkt[IP].dst
+                    
+            #         if pkt[IP].dst == "140.116.0.1":
+            #             backMSG = "from server1"
+            #         elif pkt[IP].dst == "140.116.0.2":
+            #             backMSG = "from server2"
+
+            #         if pkt[IP].src == "140.116.0.3":
+            #             isDoneSniff_eth0 = True
+            #         elif pkt[IP].src == "140.116.0.4":
+            #             isDoneSniff_server1_eth1 = True
+
+            #         print '[ Handle Packet ]', isDoneSniff_eth0, isDoneSniff_server1_eth1
+            #         new_pkt.remove_payload()
+            #         new_pkt = new_pkt / backIP / backUDP / backP2P / backMSG
+            #         print '[ Handle Packet ] new packet: START!'
+            #         new_pkt.show()
+            #         print '[ Handle Packet ] new packet: END!\n'
+            #         extractedP2P.append(new_pkt)
+
+            # hexdump(pkt)
+            # sys.stdout.flush()
+
+
+
+    elif ICMP in pkt:
+        pkt.show2()
+
+    # print '[ handle pkt ]', sender, ToWhom, table[sender][1][ToWhom], table[ToWhom][1][sender], isDoneSniff_eth0, isDoneSniff_server1_eth1
+    # print '[ handle pkt ]', sender != -1, ToWhom != -1, sender != -1 and ToWhom != -1
+    # print '[ handle pkt ]', table[sender][1][ToWhom], table[ToWhom][1][sender]
+    # print '[ handle pkt ]', table[sender][1][ToWhom] != -1, table[ToWhom][1][sender] != -1, table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1, '\n'
+    
+    # # make sure to receive info of both side
+    # if sender != -1 and ToWhom != -1:
+    #     if table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1:
+    #         isDoneSniff_eth0 = isDoneSniff_server1_eth1 = True
+
+
 
 def getIsDoneSniff_eth0(x):
     # parameter "x" is given by sniff function
@@ -270,24 +597,24 @@ def main():
 
             if server == 'server1':
                 sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
-                                                                    prn = handle_pkt,
+                                                                    prn = handle_pkt_eth0,
                                                                     stop_filter = getIsDoneSniff_eth0))
                 sniff2 = threading.Thread(target=sniff, kwargs=dict(iface = "server1-eth1",
-                                                                    prn = handle_pkt,
+                                                                    prn = handle_pkt_server1_eth1,
                                                                     stop_filter = getIsDoneSniff_server1_eth1))
             elif server == 'server2':
                 sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
-                                                                    prn = handle_pkt,
+                                                                    prn = handle_pkt_eth0,
                                                                     stop_filter = getIsDoneSniff_eth0))
                 sniff2 = threading.Thread(target=sniff, kwargs=dict(iface = "server2-eth1",
-                                                                    prn = handle_pkt,
+                                                                    prn = handle_pkt_server2_eth1,
                                                                     stop_filter = getIsDoneSniff_server1_eth1))
 
             sniff1.start()
-            # sniff2.start()
+            sniff2.start()
 
             sniff1.join()
-            # sniff2.join()
+            sniff2.join()
 
             # make sure 2 packets are received
             # if len(extractedP2P) >= 2:

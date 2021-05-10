@@ -77,7 +77,10 @@ def main():
     # pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
     # pkt = pkt /IP(dst=addr) / UDP(dport=1111, sport=1111) / p2pEst(whom2Connect=2, isEstPacket=1, direction=0) / sys.argv[2]
     if whom2Connect == '-1':
-        pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / sys.argv[2]
+        msg = sys.argv[2]
+        if len(msg) >= 14:
+            msg = msg[0:14] + '  ' + msg[14:]
+        pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / msg
     else:
         pkt = pkt /IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=int(whom2Connect), isEstPacket=1, direction=0, ) / sys.argv[2]
     pkt.show()
