@@ -14,9 +14,9 @@ from scapy.fields import BitField, IntField, ShortField, IPField
 from scapy.layers.inet import _IPOption_HDR
 
 num2host = ['h1', 'h2', 'h3', 'h4']
-table = {'h1': {'2server1': 2591, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 1111}, 
+table = {'h1': {'2server1': 59800, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 1111}, 
          'h2': {'2server1': -1, '2server2': -1, '2serverIP': '', 'whom2connect': '', 'server2port': 2222}, 
-         'h3': {'2server1': 43278, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 3333}, 
+         'h3': {'2server1': 34091, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 3333}, 
          'h4': {'2server1': -1, '2server2': -1, '2serverIP': '', 'whom2connect': '', 'server2port': 4444} }
 
 
@@ -114,7 +114,7 @@ def ReformSplitMSG(packet):
     # table[outcome[7]][outcome[0]] = outcome[1]
 
     table[outcome[7]][outcome[2]] = outcome[3]
-    table[outcome[7]][outcome[4]] = outcome[5]
+    # table[outcome[7]][outcome[4]] = outcome[5]
     table[outcome[7]][outcome[8]] = outcome[9]
 
 
@@ -161,7 +161,7 @@ def swapSenderReceiver(packet, iface, whoRU):
     etherLayer = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
     new_IP = IP(src=packet[IP].dst, dst=table[temp_whom2connect]['2serverIP'])
     new_UDP = UDP(sport=table[temp_whom2connect]['server2port'], dport=table[temp_whom2connect]['2server2'])
-    msg = transformInfo2Str(temp_whom2connect)
+    msg = transformInfo2Str(whoRU)
 
     etherLayer.remove_payload()
     etherLayer = etherLayer / new_IP / new_UDP / msg
@@ -189,7 +189,6 @@ def swapSenderReceiver(packet, iface, whoRU):
     # for i in range(34, 39):
     #     ToServer1.append(ord(packetRawLoad[i]))
     
-
 def insertP2PInfo(packet):
     if packet[p2pEst].isEstPacket == 1:
         whom = num2host[packet[p2pEst].whom2Connect]
@@ -485,6 +484,51 @@ def FromSrcPort2DstPort(port):
     else:
         return -1
 
+def get2server1port(load):
+    outcome = []
+    for i in load.split(';'):
+        temp = i.split('=')
+        outcome.append(temp[0])
+        outcome.append(temp[1])
+
+    return int(outcome[1])
+
+
+def From2server1Port2DstPort(port):
+    if table['h1']['2server1'] == port:
+        return table['h1']['2server2']
+    elif table['h2']['2server1'] == port:
+        return table['h2']['2server2']
+    elif table['h3']['2server1'] == port:
+        return table['h3']['2server2']
+    elif table['h4']['2server1'] == port:
+        return table['h4']['2server2']
+    else:
+        return -1
+
+def updateRaw(packet, port):
+    outcome = []
+    new_msg = ''
+
+    # parse packet[Raw].load
+    for i in packet[Raw].load.split(';'):
+        temp = i.split('=')
+        outcome.append(temp[0])
+        outcome.append(temp[1])
+    
+    # update info
+    outcome[3] = port
+
+    print '[ Update Raw ]', outcome
+
+    # reassemble info
+    for i in range(0, 6, 2):
+        new_msg += (str(outcome[i]) + '=' + str(outcome[i+1]) + ';')
+    
+    packet[Raw].load = new_msg
+
+    return packet
+
 def main():
     global extractedP2P, packet2Bsent2eth0, packet2Bsent2eth1
     #ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
@@ -515,10 +559,20 @@ def main():
             sniff2.join()
 
             if UDP in packet2Bsent2eth0:
+                # add missing info
                 packet2Bsent2eth0[UDP].dport = FromSrcPort2DstPort(packet2Bsent2eth0[UDP].sport)
 
+                # add to Raw
+                print '[ AAAAA ]', table['h1']
+                print '[ AAAAA ]', table['h3']
+                temp_2server1 = get2server1port(packet2Bsent2eth0[Raw].load)
+                print '[ AAAAA ]', temp_2server1
+                othersidePort = From2server1Port2DstPort(temp_2server1)
+                print '[ AAAAA ]', othersidePort
+                packet2Bsent2eth0 = updateRaw(packet2Bsent2eth0, othersidePort)
+                
                 print '[ AAAAAA ]'
-                packet2Bsent2eth1.show()
+                packet2Bsent2eth0.show()
                 sendp(packet2Bsent2eth0, iface='eth0', verbose=False)
                 packet2Bsent2eth0 = Packet()
             else:
@@ -527,7 +581,13 @@ def main():
 
 
             if UDP in packet2Bsent2eth1:
+                # add missing info
                 packet2Bsent2eth1[UDP].dport = FromSrcPort2DstPort(packet2Bsent2eth1[UDP].sport)
+                
+                # add to Raw
+                temp_2server1 = get2server1port(packet2Bsent2eth1[Raw].load)
+                othersidePort = From2server1Port2DstPort(temp_2server1)
+                packet2Bsent2eth1 = updateRaw(packet2Bsent2eth1, othersidePort)
 
                 print '[ BBBBBB ]'
                 packet2Bsent2eth1.show()
