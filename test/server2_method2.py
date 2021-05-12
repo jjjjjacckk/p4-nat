@@ -353,7 +353,6 @@ def get2server1port(load):
 
     return int(outcome[1])
 
-
 def From2server1Port2DstPort(port):
     if table['h1']['2server1'] == port:
         return table['h1']['2server2']

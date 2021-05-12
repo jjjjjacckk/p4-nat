@@ -21,6 +21,8 @@ ip2HostIndex = {"10.0.1.1": 0, "10.0.2.2": 1, \
 
 Host2ServerPort = {'h1': 1111, 'h2': 2222, 'h3': 3333, 'h4': 4444}
 
+Host2NATAddr = {'h1': '140.116.0.3', 'h2': '140.116.0.3', 'h3': '140.116.0.4', 'h4': '140.116.0.4'}
+
 connection_counter = 0      # record the index of connection
                             # connection 0 = port 33333
                             # connection 1 = port 44444
@@ -117,7 +119,7 @@ def handle_pkt_query1(pkt):
         pkt.show2()
 
 def handle_pkt_query2(pkt):
-    global isDoneSniff, connection_counter, resendPort
+    global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -125,6 +127,41 @@ def handle_pkt_query2(pkt):
 
         if checkPacket(pkt, 2):
             isDoneSniff = True
+
+            # send 1000 packet to otherside:
+            #   - with same dst port
+            #   - 1000 src ip
+            temp_2server1 = getRawInfo(pkt, '2server1')
+            temp_2server2 = getRawInfo(pkt, '2server2')
+
+            randomDstPort = temp_2server1
+            while randomDstPort in [temp_2server1, temp_2server2]:
+                randomDstPort = random.randint(0, 65535)
+            
+            no_match = [11111, 22222]
+            HostSrcPortList = []
+
+            while len(HostSrcPortList) != 1000:
+                x = random.sample(range(0, 65536), 1)
+                if x[0] not in no_match and x[0] not in HostSrcPortList:
+                    HostSrcPortList.append(x[0])
+
+            HostSrcPortList.sort()
+
+            # TODO: finish this part 
+            # for i in range(0, 1000):
+            # packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
+            #                         sp=HostSrcPortList[0], dp=randomDstPort)
+            # sendp(packet, iface='eth0', verbose=False)
+            
+
+
+
+
+
+
+
+
 
         print '\n[ handle_pkt_query2 ]', isDoneSniff, '\n'
 
@@ -183,10 +220,6 @@ def main():
     isDoneSniff = False
 
 
-
-    # send 1000 packet to otherside:
-    #   - with same dst port
-    #   - 1000 src ip
 
 if __name__ == '__main__':
     main()
