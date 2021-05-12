@@ -98,12 +98,16 @@ def handle_pkt_query1(pkt):
             isDoneSniff = True
         
 
+        # - send back otherside info:
+        #     1. assignment mode (basically is random)
+        #     2. otherside server1 port
+        #     3. otherside server2 port
+        #     4. whoAmI
+        #     5. whom2connect
 
         packet2server = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, \
                                  dstAddr='140.116.0.2', sp='22222', dp=Host2ServerPort[param_whoAmI], \
                                  Q1packet=pkt)
-        print '\n[ handle_pkt_query1 ] After packet2server' 
-        packet2server.show()
         sendp(packet2server, iface='eth0', verbose=False)
 
         print '\n[ handle_pkt_query1 ]', isDoneSniff, '\n'
@@ -171,18 +175,8 @@ def main():
 
 
     # query server2 : (analyse port assignment mode)
-    #   - send back otherside info:
-    #       1. assignment mode (basically is random)
-    #       2. otherside server1 port
-    #       3. otherside server2 port
-    #       4. whoAmI
-    #       5. whom2connect
-    # packet2server = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, \
-    #                              dstAddr='140.116.0.2', sp='22222', dp=Host2ServerPort[param_whoAmI], \
-    #                              Q1packet=packet2server)
-    # print '\n[ main ] After packet2server' 
-    # packet2server.show()
-    # sendp(packet2server, iface='eth0', verbose=False)
+    # -> place in sniff (line: 169)
+
 
     # sniff from server2
     sniff(iface='eth0', prn=handle_pkt_query2, stop_filter=getIsDoneSniff)

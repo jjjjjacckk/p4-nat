@@ -230,6 +230,8 @@ def handle_pkt_eth0(pkt):
                     packet2Bsent2eth1 = pkt
                 else:
                     print '[ IN handle_pkt_eth0 ]'
+                    
+
                     pkt.show()
                     sendp(pkt, iface='server2-eth1', verbose=False)
                     packet2Bsent2eth1 = Packet()
@@ -246,58 +248,6 @@ def handle_pkt_eth0(pkt):
 
     elif ICMP in pkt:
         pkt.show2()
-
-    # print '[ handle pkt ]', sender, ToWhom, table[sender][1][ToWhom], table[ToWhom][1][sender], isDoneSniff_eth0, isDoneSniff_server_eth1
-    # print '[ handle pkt ]', sender != -1, ToWhom != -1, sender != -1 and ToWhom != -1
-    # print '[ handle pkt ]', table[sender][1][ToWhom], table[ToWhom][1][sender]
-    # print '[ handle pkt ]', table[sender][1][ToWhom] != -1, table[ToWhom][1][sender] != -1, table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1, '\n'
-    
-    # # make sure to receive info of both side
-    # if sender != -1 and ToWhom != -1:
-    #     if table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1:
-    #         isDoneSniff_eth0 = isDoneSniff_server_eth1 = True
-
-def handle_pkt_server1_eth1(pkt):
-    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1
-
-    # if TCP in pkt and pkt[TCP].dport == 1234:
-    if UDP in pkt :
-        if p2pEst not in pkt:
-
-            print "got a packet"
-            print '[ Before ]'
-            pkt.show()
-            print pkt[UDP].sport, pkt[UDP].dport
-
-            print '[ After ]'
-            pkt = ReformSplitMSG(pkt)
-            pkt.show()
-            print pkt[UDP].sport, pkt[UDP].dport
-
-
-            # # send back to host
-            pkt = swapSenderReceiver(pkt, 'server1-eth1')
-            print '[ After2 ]'
-            pkt.show()
-            sendp(pkt, iface='server1-eth1', verbose=False)
-
-            isDoneSniff_server_eth1 = True
-
-            # hexdump(pkt)
-            sys.stdout.flush()
-
-    elif ICMP in pkt:
-        pkt.show2()
-
-    # print '[ handle pkt ]', sender, ToWhom, table[sender][1][ToWhom], table[ToWhom][1][sender], isDoneSniff_eth0, isDoneSniff_server_eth1
-    # print '[ handle pkt ]', sender != -1, ToWhom != -1, sender != -1 and ToWhom != -1
-    # print '[ handle pkt ]', table[sender][1][ToWhom], table[ToWhom][1][sender]
-    # print '[ handle pkt ]', table[sender][1][ToWhom] != -1, table[ToWhom][1][sender] != -1, table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1, '\n'
-    
-    # # make sure to receive info of both side
-    # if sender != -1 and ToWhom != -1:
-    #     if table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1:
-    #         isDoneSniff_eth0 = isDoneSniff_server_eth1 = True
 
 def handle_pkt_server2_eth1(pkt):
     global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packet2Bsent2eth0
@@ -325,6 +275,7 @@ def handle_pkt_server2_eth1(pkt):
                     packet2Bsent2eth0 = pkt
                 else:
                     print '[ IN handle_pkt_server2_eth1 ]'
+                    
                     pkt.show()
                     sendp(pkt, iface='eth0', verbose=False)
                     packet2Bsent2eth0 = Packet()
@@ -340,16 +291,6 @@ def handle_pkt_server2_eth1(pkt):
 
     elif ICMP in pkt:
         pkt.show2()
-
-    # print '[ handle pkt ]', sender, ToWhom, table[sender][1][ToWhom], table[ToWhom][1][sender], isDoneSniff_eth0, isDoneSniff_server_eth1
-    # print '[ handle pkt ]', sender != -1, ToWhom != -1, sender != -1 and ToWhom != -1
-    # print '[ handle pkt ]', table[sender][1][ToWhom], table[ToWhom][1][sender]
-    # print '[ handle pkt ]', table[sender][1][ToWhom] != -1, table[ToWhom][1][sender] != -1, table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1, '\n'
-    
-    # # make sure to receive info of both side
-    # if sender != -1 and ToWhom != -1:
-    #     if table[sender][1][ToWhom] != -1 and table[ToWhom][1][sender] != -1:
-    #         isDoneSniff_eth0 = isDoneSniff_server_eth1 = True
 
 def getIsDoneSniff_eth0(x):
     # parameter "x" is given by sniff function
@@ -477,6 +418,8 @@ def main():
             sniff1.join()
             sniff2.join()
 
+            time.sleep(1)
+
             if UDP in packet2Bsent2eth0:
                 # add missing info
                 packet2Bsent2eth0[UDP].dport = FromSrcPort2DstPort(packet2Bsent2eth0[UDP].sport)
@@ -497,7 +440,7 @@ def main():
             else:
                 packet2Bsent2eth0 = Packet()
             
-
+            time.sleep(1)
 
             if UDP in packet2Bsent2eth1:
                 # add missing info
