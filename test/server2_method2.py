@@ -15,9 +15,9 @@ from scapy.layers.inet import _IPOption_HDR
 
 num2host = ['h1', 'h2', 'h3', 'h4']
 table = {'h1': {'2server1': 59800, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 1111}, 
-         'h2': {'2server1': -1, '2server2': -1, '2serverIP': '', 'whom2connect': '', 'server2port': 2222}, 
+         'h2': {'2server1': 13185, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 2222}, 
          'h3': {'2server1': 34091, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 3333}, 
-         'h4': {'2server1': -1, '2server2': -1, '2serverIP': '', 'whom2connect': '', 'server2port': 4444} }
+         'h4': {'2server1': 53685, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 4444} }
 
 
 class p2pEst(Packet):
@@ -109,12 +109,12 @@ def ReformSplitMSG(packet):
     new_msg = ''
 
     # store info to "table"
+    print packet[Raw].load
+    print outcome
 
-    # FIXME: uncomment the next line
     # table[outcome[7]][outcome[0]] = outcome[1]
-
     table[outcome[7]][outcome[2]] = outcome[3]
-    # table[outcome[7]][outcome[4]] = outcome[5]
+    table[outcome[7]][outcome[4]] = outcome[5]
     table[outcome[7]][outcome[8]] = outcome[9]
 
 
@@ -286,85 +286,6 @@ def handle_pkt_server1_eth1(pkt):
             # hexdump(pkt)
             sys.stdout.flush()
 
-            # print  repr(pkt[Raw]), type(pkt[Raw])
-            # print len(pkt[Raw])
-            # print '[ Content ]'
-            # print pkt[Raw].load
-            # # print repr(pkt[Raw][0][15])
-            # # for i in pkt[Raw]:
-            # #     print 'pkt[Raw] = ', i
-
-            # raw = pkt[Raw]
-            # if len(raw.load) >= 14:
-            #     raw.load = raw.load[0:14] + raw.load[16:]
-
-            # new_pkt = pkt
-            # new_pkt[UDP].remove_payload()
-            # new_pkt = new_pkt / raw
-            # new_pkt.show2()
-
-
-            # pkt[UDP].remove_payload()
-            # pkt /= segment['packet']
-            # pkt /= Raw(load=segment['msg'])
-            # print '[ Handle Packet ] old packet: START!'
-            # pkt.show()
-            # print '[ Handle Packet ] old packet: END!\n'
-
-
-            # ToWhom = -1
-            # sender = -1
-            # if p2pEst in pkt:
-            #     print '[ Handle Packet ]', pkt[p2pEst].isEstPacket, pkt[p2pEst].isEstPacket==1
-            #     if pkt[p2pEst].isEstPacket == 1:
-            #         # extractP2P: store new packet
-
-            #         # insert propriate information into p2pEst packet
-            #         ToWhom = num2host[pkt[p2pEst].whom2Connect]
-            #         sender = num2host[pkt[p2pEst].whoAmI]
-            #         print '[ Handle Packet ]', ToWhom, sender
-            #         backP2P = p2pEst( p2pOthersideIP=table[ToWhom][0], 
-            #                          p2pOthersidePort=table[ToWhom][1][sender], 
-            #                          selfNATIP=pkt[p2pEst].selfNATIP, 
-            #                          candidatePort=pkt[p2pEst].candidatePort, 
-            #                          matchSrcPortIndex=pkt[p2pEst].matchSrcPortIndex, 
-            #                          whoAmI=pkt[p2pEst].whoAmI,
-            #                          direction=1, 
-            #                          whom2Connect=pkt[p2pEst].whom2Connect, 
-            #                          isEstPacket=1)
-            #         table[sender][1][ToWhom] = pkt[p2pEst].candidatePort
-            #         print '[ Handle Packet ]', sender, ToWhom, table[sender][1][ToWhom], table[sender][1][ToWhom]==-1
-
-            #         # insert send back information
-            #         new_pkt = pkt[Ether]
-            #         backIP = IP(dst=pkt[IP].src)
-            #         backUDP = UDP(sport=pkt[UDP].dport, dport=pkt[UDP].sport)
-
-            #         print '[ Handle Packet ]', pkt[IP].dst
-                    
-            #         if pkt[IP].dst == "140.116.0.1":
-            #             backMSG = "from server1"
-            #         elif pkt[IP].dst == "140.116.0.2":
-            #             backMSG = "from server2"
-
-            #         if pkt[IP].src == "140.116.0.3":
-            #             isDoneSniff_eth0 = True
-            #         elif pkt[IP].src == "140.116.0.4":
-            #             isDoneSniff_server_eth1 = True
-
-            #         print '[ Handle Packet ]', isDoneSniff_eth0, isDoneSniff_server_eth1
-            #         new_pkt.remove_payload()
-            #         new_pkt = new_pkt / backIP / backUDP / backP2P / backMSG
-            #         print '[ Handle Packet ] new packet: START!'
-            #         new_pkt.show()
-            #         print '[ Handle Packet ] new packet: END!\n'
-            #         extractedP2P.append(new_pkt)
-
-            # hexdump(pkt)
-            # sys.stdout.flush()
-
-
-
     elif ICMP in pkt:
         pkt.show2()
 
@@ -395,8 +316,6 @@ def handle_pkt_server2_eth1(pkt):
                 pkt.show()
                 print pkt[UDP].sport, pkt[UDP].dport
 
-
-                # FIXME: too few argument for swapSenderReceiver()
                 # send back to host
                 pkt = swapSenderReceiver(pkt, 'eth0', getWho(pkt))
                 print '[ After2 ]'

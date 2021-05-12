@@ -86,13 +86,13 @@ def handle_pkt(pkt):
         print '[ Before ]'
         pkt.show()
 
-        segment = reformP2PEst(pkt[Raw].load)
+        # segment = reformP2PEst(pkt[Raw].load)
 
-        pkt[UDP].remove_payload()
-        pkt /= segment['packet']
-        pkt /= Raw(load=segment['msg'])
-        print '[ After ]'
-        pkt.show()
+        # pkt[UDP].remove_payload()
+        # pkt /= segment['packet']
+        # pkt /= Raw(load=segment['msg'])
+        # print '[ After ]'
+        # pkt.show()
     #    hexdump(pkt)
         sys.stdout.flush()
     elif ICMP in pkt:
