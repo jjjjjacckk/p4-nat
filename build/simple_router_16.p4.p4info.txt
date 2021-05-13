@@ -16,6 +16,20 @@ tables {
   action_refs {
     id: 16784184
   }
+  action_refs {
+    id: 16800567
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33603937
+    name: "AddNATEntryTable"
+    alias: "AddNATEntryTable"
+  }
+  action_refs {
+    id: 16811295
+  }
   size: 1024
 }
 tables {
@@ -111,7 +125,8 @@ tables {
     annotations: "@defaultonly"
     scope: DEFAULT_ONLY
   }
-  size: 1024
+  size: 65536
+  idle_timeout_behavior: NOTIFY_CONTROL
 }
 tables {
   preamble {
@@ -151,7 +166,8 @@ tables {
     annotations: "@defaultonly"
     scope: DEFAULT_ONLY
   }
-  size: 1024
+  size: 65536
+  idle_timeout_behavior: NOTIFY_CONTROL
 }
 tables {
   preamble {
@@ -231,7 +247,8 @@ tables {
     annotations: "@defaultonly"
     scope: DEFAULT_ONLY
   }
-  size: 1024
+  size: 65536
+  idle_timeout_behavior: NOTIFY_CONTROL
 }
 tables {
   preamble {
@@ -339,8 +356,8 @@ actions {
 }
 actions {
   preamble {
-    id: 16827362
-    name: "_DIGEST_AddNewNATEntry"
+    id: 16811295
+    name: "MyIngress._DIGEST_AddNewNATEntry"
     alias: "_DIGEST_AddNewNATEntry"
   }
 }

@@ -1,6 +1,11 @@
 #include <core.p4>
 #include <v1model.p4>
 
+enum PSA_IdleTimeout_t {
+  NO_TIMEOUT,
+  NOTIFY_CONTROL
+}
+
 struct l3_metadata_t {
     bit<2>  lkp_ip_type;
     bit<4>  lkp_ip_version;
@@ -256,6 +261,8 @@ control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata
             hdr.ipv4.srcAddr: exact;
             hdr.udp.srcPort: exact;
         }
+        support_timeout = true;
+        size = 65536;
     }
     @name(".fwd_nat_tcp") table fwd_nat_tcp {
         actions = {
@@ -350,7 +357,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                                                       hdr.p2pEst.candidatePort         // Candidate Port for this connection
                                                     });
     }
-    @name("._DIGEST_AddNewNATEntry") action _DIGEST_AddNewNATEntry() {
+    @name("_DIGEST_AddNewNATEntry") action _DIGEST_AddNewNATEntry() {
         // Digest info to controller to add new EgressTaleEntry
         // Digest = send info to controller
         digest<AddNewNATEntry>( (bit<32>)1024, { hdr.ipv4.dstAddr,  // othersideIP
@@ -360,7 +367,10 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                                                 });
     }
     @name("._check_if_from_host_ingress") table _check_if_from_host_ingress {
-        actions = { _drop; }
+        actions = { 
+            _drop;
+            NoAction; 
+        }
         key = { hdr.ipv4.srcAddr : exact; }
         size = 1024;
         default_action = _drop();
@@ -371,7 +381,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         hdr.udp.srcPort = udpPort;
         meta.meta.natForward = 1w1;
     }
-  
+    @name(".AddNATEntryTable") table AddNATEntryTable {
+        actions = { _DIGEST_AddNewNATEntry; }
+        key = { }
+        size = 1024;
+        default_action = _DIGEST_AddNewNATEntry();
+    }
     @name(".send_info2controller") table send_info2controller {
         actions = { _DIGEST_Ingress; }
         key = { }
@@ -407,6 +422,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             hdr.udp.srcPort: exact;
             hdr.udp.dstPort: exact;
         }
+        support_timeout = true;
+        size = 65536;
     }
     @name(".match_egress_nat_ip_method2") table match_egress_nat_ip_method2 {
         actions = {
@@ -418,6 +435,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             hdr.ipv4.srcAddr: exact;
             hdr.udp.srcPort: exact;
         }
+        support_timeout = true;
+        size = 65536;
     }
     @name(".rev_nat_tcp") table rev_nat_tcp {
         actions = {
@@ -466,12 +485,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                             match_sender.apply();
                     } else {
                         // for method 2 : add match_ingress_nat_ip 
-                        _check_if_from_host_ingress.apply();
+                        if (_check_if_from_host_ingress.apply().hit == true) {
+                            // for method 2:
+                            // when egress_nat table is miss, digest to controller to add new table entry
+                            if (match_egress_nat_ip_method2.apply().hit == false)
+                                AddNATEntryTable.apply();
+                        }
 
-                        // for method 2:
-                        // when egress_nat table is miss, digest to controller to add new table entry
-                        if (match_egress_nat_ip_method2.apply().hit == false)
-                            _DIGEST_AddNewNATEntry();
                     }
                 } else {
                     if (hdr.p2pEst.isValid()) {

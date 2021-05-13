@@ -216,13 +216,17 @@ class P4InfoHelper(object):
                         action_name=None,
                         action_params=None,
                         priority=None,
-                        TTL=None):
+                        TTL=None,
+                        TTL_LastHit=None):
         table_entry = p4runtime_pb2.TableEntry()
         table_entry.table_id = self.get_tables_id(table_name)
 
         if TTL is not None:
+            print '[ helper ] TTL =', TTL
             table_entry.idle_timeout_ns = TTL
-        # table_entry.time_since_last_hit
+        
+        # if TTL_LastHit is not None:
+        #     table_entry.time_since_last_hit = None
 
         if priority is not None:
             table_entry.priority = priority
