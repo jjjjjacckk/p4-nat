@@ -1,1 +1,0 @@
-./send.py 140.116.0.1 "2server1=-1;2server2=-1;2serverIP=0.0.0.0;who=h3;whom2connect=h1" 3333 11111 -1 eth0

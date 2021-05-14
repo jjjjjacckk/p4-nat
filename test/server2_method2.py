@@ -103,6 +103,7 @@ def ReformSplitMSG(packet):
         outcome.append(temp[1])
         # info[temp[0]] = temp[1]
     
+    print '[ ReformSplitMSG ] outcome =', len(outcome), outcome
     # insert port 
     outcome[3] = packet[UDP].sport
     outcome[5] = packet[IP].src
@@ -209,7 +210,8 @@ def handle_pkt_eth0(pkt):
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
         if p2pEst not in pkt:
-            if len(pkt[Raw].load) >= 28:
+            # if len(pkt[Raw].load) >= 28:
+            if pkt[Raw].load.find('who=') != -1:
                 print "got a packet"
                 print '[ Before ]'
                 pkt.show()
@@ -230,9 +232,10 @@ def handle_pkt_eth0(pkt):
                     packet2Bsent2eth1 = pkt
                 else:
                     print '[ IN handle_pkt_eth0 ]'
-                    
-
                     pkt.show()
+                    
+                    time.sleep(1)
+                    
                     sendp(pkt, iface='server2-eth1', verbose=False)
                     packet2Bsent2eth1 = Packet()
 
@@ -255,12 +258,15 @@ def handle_pkt_server2_eth1(pkt):
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
         if p2pEst not in pkt:
-            if len(pkt[Raw].load) >= 28:
+            print '[ handle_pkt_server2_eth1 ] pkt[Raw].load.find("who=") != -1', pkt[Raw].load.find('who=')
+            if pkt[Raw].load.find('who=') != -1:
                 print "got a packet"
+                print '------------------------ 1 --------------------------'
                 print '[ Before ]'
                 pkt.show()
                 print pkt[UDP].sport, pkt[UDP].dport
 
+                print '------------------------ 2 --------------------------'
                 print '[ After ]'
                 pkt = ReformSplitMSG(pkt)
                 pkt.show()
@@ -268,15 +274,19 @@ def handle_pkt_server2_eth1(pkt):
 
                 # send back to host
                 pkt = swapSenderReceiver(pkt, 'eth0', getWho(pkt))
+                print '------------------------ 3 --------------------------'
                 print '[ After2 ]'
                 pkt.show()
 
                 if pkt[UDP].dport == -1:
                     packet2Bsent2eth0 = pkt
                 else:
+                    print '------------------------ 4 --------------------------'
                     print '[ IN handle_pkt_server2_eth1 ]'
-                    
                     pkt.show()
+
+                    time.sleep(1)
+                    
                     sendp(pkt, iface='eth0', verbose=False)
                     packet2Bsent2eth0 = Packet()
 
@@ -381,15 +391,16 @@ def updateRaw(packet, port):
     print '[ Update Raw ]', outcome
 
     # reassemble info
-    for i in range(0, 6, 2):
+    for i in range(0, 4, 2):
         new_msg += (str(outcome[i]) + '=' + str(outcome[i+1]) + ';')
     
+    new_msg += (str(outcome[4]) + '=' + str(outcome[4+1]))
     packet[Raw].load = new_msg
 
     return packet
 
 def main():
-    global extractedP2P, packet2Bsent2eth0, packet2Bsent2eth1
+    global extractedP2P, packet2Bsent2eth0, packet2Bsent2eth1, isDoneSniff_eth0, isDoneSniff_server_eth1
     #ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     #iface = ifaces[0]
     # iface = sys.argv[1]
@@ -418,6 +429,14 @@ def main():
             sniff2.join()
 
             time.sleep(1)
+
+            print '[ Main ] end sniffing'
+            print '[ Main ] packet2Bsent2eth0 == None', packet2Bsent2eth0 is None
+            if packet2Bsent2eth0 is not None:
+                packet2Bsent2eth0.show()
+            print '[ Main ] packet2Bsent2eth1 == None', packet2Bsent2eth1 is None
+            if packet2Bsent2eth1 is not None:
+                packet2Bsent2eth1.show()
 
             if UDP in packet2Bsent2eth0:
                 # add missing info
@@ -457,6 +476,8 @@ def main():
             else:
                 packet2Bsent2eth1 = Packet()
 
+            isDoneSniff_eth0 = False
+            isDoneSniff_server_eth1 = False
 
     except KeyboardInterrupt:
         print " Shutting down."

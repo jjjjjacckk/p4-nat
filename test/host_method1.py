@@ -158,9 +158,6 @@ def main():
     resendPort = sys.argv[6]
 
 
-
-
-
     print "sending on interface %s to %s" % ('eth0', str(addr))
     # print 'get_if_hwaddr(iface) ', get_if_hwaddr('eth0')
     pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')

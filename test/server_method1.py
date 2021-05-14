@@ -38,7 +38,7 @@ class IPOption_MRI(IPOption):
     fields_desc = [ _IPOption_HDR,
                     FieldLenField("length", None, fmt="B",
                                   length_of="swids",
-                                  adjust=lambda pkt,l:l+4),
+                                  adjust=lambda pokt,l:l+4),
                     ShortField("count", 0),
                     FieldListField("swids",
                                    [],
@@ -242,10 +242,7 @@ def main():
                 exit(1)
             else:
                 break
-        
-        
-
-
+    
     try:
         while True:
             print 'NAT starts successfully!'

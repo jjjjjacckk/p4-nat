@@ -50,12 +50,32 @@ def getIsDoneSniff(x):
     global isDoneSniff
     return isDoneSniff
 
+
+class p2pEst(Packet):
+    name = 'p2pEst'
+    fields_desc = [
+        IPField("p2pOthersideIP", "0.0.0.0"),
+        ShortField("p2pOthersidePort", 0),
+        IPField("selfNATIP", "0.0.0.0"),
+        ShortField("candidatePort", 0),
+        ShortField("matchSrcPortIndex", 0),
+        ShortField("whoAmI", 1),
+        BitField("direction", 0, 1),
+        BitField("whom2Connect", 0, 11),
+        BitField("isEstPacket", 0, 4),
+    ]
+
+
 def getRawInfo(packet, index):
     msg = packet[Raw].load
+    print '[ getRawInfo ]', msg
+    print '[ getRawInfo ]', index
     parse = {'2server1': -1, '2server2': -1, '2serverIP': '0.0.0.0', 'who': '', 'whom2connect': ''}
 
     for i in msg.split(';'):
+        print '[ getRawInfo ] i =', i
         temp = i.split('=')
+        print '[ getRawInfo ] temp =', temp
         parse[temp[0]] = temp[1]
 
     if index in ['2server1', '2server2']:
@@ -64,6 +84,10 @@ def getRawInfo(packet, index):
         return parse[index]
     
 def checkPacket(packet, queryNum):
+    print '[ checkPacket ]', queryNum
+    print '[ checkPacket ]'
+    packet.show()
+
     outcome = True
     if queryNum == 1:
         # check packet[Raw]
@@ -94,8 +118,8 @@ def handle_pkt_query1(pkt):
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
+        print '------------------------ 1 --------------------------'
         pkt.show()
-
         if checkPacket(pkt, 1):
             isDoneSniff = True
         
@@ -110,6 +134,9 @@ def handle_pkt_query1(pkt):
         packet2server = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, \
                                  dstAddr='140.116.0.2', sp='22222', dp=Host2ServerPort[param_whoAmI], \
                                  Q1packet=pkt)
+        print '------------------------ 2 --------------------------'
+        print '[ handle_pkt_query1 ] Query 2'
+        packet2server.show()              
         sendp(packet2server, iface='eth0', verbose=False)
 
         print '\n[ handle_pkt_query1 ]', isDoneSniff, '\n'
@@ -119,6 +146,7 @@ def handle_pkt_query1(pkt):
         pkt.show2()
 
 def handle_pkt_query2(pkt):
+    print '[ handle_pkt_query2 ] processing'
     global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
@@ -134,6 +162,7 @@ def handle_pkt_query2(pkt):
             temp_2server1 = getRawInfo(pkt, '2server1')
             temp_2server2 = getRawInfo(pkt, '2server2')
 
+            # gen dstPort
             randomDstPort = temp_2server1
             while randomDstPort in [temp_2server1, temp_2server2]:
                 randomDstPort = random.randint(0, 65535)
@@ -141,6 +170,7 @@ def handle_pkt_query2(pkt):
             no_match = [11111, 22222]
             HostSrcPortList = []
 
+            # random 1000 srcPort
             while len(HostSrcPortList) != 1000:
                 x = random.sample(range(0, 65536), 1)
                 if x[0] not in no_match and x[0] not in HostSrcPortList:
@@ -148,26 +178,32 @@ def handle_pkt_query2(pkt):
 
             HostSrcPortList.sort()
 
-            # TODO: finish this part 
-            # for i in range(0, 1000):
+            # send packets
+            # FIXME: when reach over 500 
+            # controller terminte with unknown reason :(((((
+            for i in range(0, 500):
+                packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
+                                        sp=HostSrcPortList[i], dp=randomDstPort)
+                # print '[ handle_pkt_query2 ] packet ='
+                # packet.show() 
+                sendp(packet, iface='eth0', verbose=False)
+                print 'send %dth packet' % i
+                time.sleep(0.05)
+
             # packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
             #                         sp=HostSrcPortList[0], dp=randomDstPort)
+            # print '[ handle_pkt_query2 ] packet ='
+            # packet.show() 
+            # print '[ handle_pkt_query2 ] isP2PEstValid = ', p2pEst in packet
             # sendp(packet, iface='eth0', verbose=False)
             
-
-
-
-
-
-
-
-
-
         print '\n[ handle_pkt_query2 ]', isDoneSniff, '\n'
 
         sys.stdout.flush()
     elif ICMP in pkt:
         pkt.show2()
+    else:
+        print '[ handle_pkt_query2 ]', pkt
 
 def buildmsg(whoAmI, whom2connect, Q1packet=None):
     if Q1packet is None:
@@ -199,13 +235,18 @@ def main():
     param_whoAmI = sys.argv[1]
     param_whom2connect = sys.argv[2]
     
+
+
+
+
+    print '[ Main ] Query 1'
     # query server1 : send back nat1 port info1
     packet2server = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, \
                                  dstAddr='140.116.0.1', sp='11111', dp=Host2ServerPort[param_whoAmI])
     packet2server.show()
     sendp(packet2server, iface='eth0', verbose=False)
 
-
+    print '[ Main ] Sniff 1'
     # sniff from server1
     sniff(iface='eth0', prn=handle_pkt_query1, stop_filter=getIsDoneSniff)
     isDoneSniff = False
@@ -214,7 +255,7 @@ def main():
     # query server2 : (analyse port assignment mode)
     # -> place in sniff (line: 169)
 
-
+    print '[ Main ] Sniff 2'
     # sniff from server2
     sniff(iface='eth0', prn=handle_pkt_query2, stop_filter=getIsDoneSniff)
     isDoneSniff = False

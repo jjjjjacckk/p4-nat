@@ -5,7 +5,7 @@ import os
 import sys
 import random
 import threading
-from time import sleep
+import time
 import inspect
 
 # Import P4Runtime lib from parent utils dir
@@ -532,8 +532,10 @@ def main(p4info_file_path, bmv2_file_path, method):
         # addPortEntry(seq_last_index_1, p4info_helper, nat1, seq_nat_1)
         # seq_last_index_1 += 11
         
-
+        counter = 0
         # set_match_ingress_nat_ip(p4info_helper, nat1, '140.116.0.4', 222, candidatePort=5555, hostIP='10.0.1.1', hostPort=111, TTL=3000000000)
+        start = time.time()
+        end = start
         while True:
             # for i in range(15, 15+10):
             #     print '%d [TEST]' % i
@@ -619,6 +621,7 @@ def main(p4info_file_path, bmv2_file_path, method):
                             # set_match_ingress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, hostIP, hostPort)
                             # set_match_egress_nat_ip(p4info_helper, nat1, othersideIP, othersidePort, NATIP, candidatePort)
                 elif digest_name == 'AddNewNATEntry':
+                    counter += 1
                     for members in digest.data:
                         #print members
                         if members.WhichOneof('data')=='struct':
@@ -638,39 +641,42 @@ def main(p4info_file_path, bmv2_file_path, method):
                         set_match_egress_nat_ip_method2(p4info_helper, nat1, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=3000000000, TTL_LastHit=1)
                         seq_last_index_1 += 1
             elif digests_nat1.WhichOneof('update') == 'idle_timeout_notification':
+                
+
+
                 print '[ Anthoer than Digest ]', digests_nat1
                 temp = digests_nat1.idle_timeout_notification
                 print '[ Anthoer than Digest ]', temp
                 # print '[ Anthoer than Digest ]', temp.table_entry
                 for members in temp.table_entry:
-                    print '[ In Loop ]', type(members)
-                    print '[ In Loop ] members.table_id =', members.table_id
-                    print '[ In Loop ] type(members.match) =', type(members.match)
-                    print '[ In Loop ] len(members.match) =', len(members.match)
+                    # print '[ In Loop ]', type(members)
+                    # print '[ In Loop ] members.table_id =', members.table_id
+                    # print '[ In Loop ] type(members.match) =', type(members.match)
+                    # print '[ In Loop ] len(members.match) =', len(members.match)
                     table_name = p4info_helper.get_tables_name(members.table_id)
                     print '[ In Loop ] table_name =', table_name
                     print '---------------------------------------------------------'
-                    t = extractMatchField(table_name=table_name, match=members.match)
-                    print '[ In Loop ] extractMatchField =', table_name, t
+                    extracted = extractMatchField(table_name=table_name, match=members.match)
+                    print '[ In Loop ] extractMatchField =', table_name, extracted
                     if table_name == 'match_ingress_nat_ip':
                         delete_match_ingress_nat_ip(p4info_helper, nat1, \
-                                                    othersideIP=t['othersideIP'], \
-                                                    othersidePort=t['othersidePort'], \
-                                                    NATPort=t['NATPort'])
+                                                    othersideIP=extracted['othersideIP'], \
+                                                    othersidePort=extracted['othersidePort'], \
+                                                    NATPort=extracted['NATPort'])
                         print '[ In Loop ] delete_match_ingress_nat_ip'
                     elif table_name == 'match_egress_nat_ip':
                         delete_match_egress_nat_ip(p4info_helper, nat1, \
-                                                    othersideIP=t['othersideIP'], \
-                                                    othersidePort=t['othersidePort'], \
-                                                    srcIP=t['srcIP'], \
-                                                    srcPort=t['srcPort'])
+                                                    othersideIP=extracted['othersideIP'], \
+                                                    othersidePort=extracted['othersidePort'], \
+                                                    srcIP=extracted['srcIP'], \
+                                                    srcPort=extracted['srcPort'])
                         print '[ In Loop ] match_egress_nat_ip'
                     elif table_name == 'match_egress_nat_ip_method2':
                         delete_match_egress_nat_ip_method2(p4info_helper, nat1, \
-                                                           othersideIP=t['othersideIP'], \
-                                                           othersidePort=t['othersidePort'], \
-                                                           srcIP=t['srcIP'], \
-                                                           srcPort=t['srcPort'])
+                                                           othersideIP=extracted['othersideIP'], \
+                                                           othersidePort=extracted['othersidePort'], \
+                                                           srcIP=extracted['srcIP'], \
+                                                           srcPort=extracted['srcPort'])
                         print '[ In Loop ] match_egress_nat_ip_method2'
                     print '---------------------------------------------------------'
 
@@ -753,34 +759,34 @@ def main(p4info_file_path, bmv2_file_path, method):
                 print '[ Anthoer than Digest ]', temp
                 # print '[ Anthoer than Digest ]', temp.table_entry
                 for members in temp.table_entry:
-                    print '[ In Loop ]', type(members)
-                    print '[ In Loop ] members.table_id =', members.table_id
-                    print '[ In Loop ] type(members.match) =', type(members.match)
-                    print '[ In Loop ] len(members.match) =', len(members.match)
+                    # print '[ In Loop ]', type(members)
+                    # print '[ In Loop ] members.table_id =', members.table_id
+                    # print '[ In Loop ] type(members.match) =', type(members.match)
+                    # print '[ In Loop ] len(members.match) =', len(members.match)
                     table_name = p4info_helper.get_tables_name(members.table_id)
                     print '[ In Loop ] table_name =', table_name
                     print '---------------------------------------------------------'
-                    t = extractMatchField(table_name=table_name, match=members.match)
-                    print '[ In Loop ] extractMatchField =', table_name, t
+                    extracted = extractMatchField(table_name=table_name, match=members.match)
+                    print '[ In Loop ] extractMatchField =', table_name, extracted
                     if table_name == 'match_ingress_nat_ip':
                         delete_match_ingress_nat_ip(p4info_helper, nat2, \
-                                                    othersideIP=t['othersideIP'], \
-                                                    othersidePort=t['othersidePort'], \
-                                                    NATPort=t['NATPort'])
+                                                    othersideIP=extracted['othersideIP'], \
+                                                    othersidePort=extracted['othersidePort'], \
+                                                    NATPort=extracted['NATPort'])
                         print '[ In Loop ] delete_match_ingress_nat_ip'
                     elif table_name == 'match_egress_nat_ip':
                         delete_match_egress_nat_ip(p4info_helper, nat2, \
-                                                    othersideIP=t['othersideIP'], \
-                                                    othersidePort=t['othersidePort'], \
-                                                    srcIP=t['srcIP'], \
-                                                    srcPort=t['srcPort'])
+                                                    othersideIP=extracted['othersideIP'], \
+                                                    othersidePort=extracted['othersidePort'], \
+                                                    srcIP=extracted['srcIP'], \
+                                                    srcPort=extracted['srcPort'])
                         print '[ In Loop ] match_egress_nat_ip'
                     elif table_name == 'match_egress_nat_ip_method2':
                         delete_match_egress_nat_ip_method2(p4info_helper, nat2, \
-                                                           othersideIP=t['othersideIP'], \
-                                                           othersidePort=t['othersidePort'], \
-                                                           srcIP=t['srcIP'], \
-                                                           srcPort=t['srcPort'])
+                                                           othersideIP=extracted['othersideIP'], \
+                                                           othersidePort=extracted['othersidePort'], \
+                                                           srcIP=extracted['srcIP'], \
+                                                           srcPort=extracted['srcPort'])
                         print '[ In Loop ] match_egress_nat_ip_method2'
                     print '---------------------------------------------------------'
 
@@ -794,11 +800,17 @@ def main(p4info_file_path, bmv2_file_path, method):
                 for i in range(seq_last_index_2, seq_last_index_2+10):
                     set_CandidatePort(p4info_helper, nat2, i, seq_nat_2[i], 1)
                 seq_last_index_2 += 11
-                            
+            
+            if counter == 1000:
+                end = time.time()
+                print '[ Main ] counter = %d, elapsed time = ' % counter, end - start
+                counter = 0
+
     except KeyboardInterrupt:
         print " Shutting down."
     except grpc.RpcError as e:
         printGrpcError(e)
+
 
     ShutdownAllSwitchConnections()
 
