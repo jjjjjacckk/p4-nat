@@ -163,17 +163,27 @@ extractedP2P = []
 Index_PacketFromClient = 0
 Index_PacketFromServer = 1
 
+def handle_pkt_test(pkt):
+    if UDP in pkt:
+        if pkt[Raw].load.find('URNATPort=') != -1:
+            # successfully receive connection packet
+
+            # send info to server
+            packet = Ether(get_if_hwaddr('eth0'),)
+
+
+
 def handle_pkt_eth0(pkt):
     global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1
 
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
         if p2pEst not in pkt:
-
             print "got a packet"
             print '[ Before ]'
             pkt.show()
             print pkt[UDP].sport, pkt[UDP].dport
+
 
             print '[ After ]'
             pkt = ReformSplitMSG(pkt)
@@ -274,7 +284,7 @@ def sendBack(packet):
             sendp(packet, iface="server2-eth1", verbose=False)
 
 def main():
-    global extractedP2P
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1
     #ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     #iface = ifaces[0]
     # iface = sys.argv[1]
@@ -301,6 +311,8 @@ def main():
 
             sniff1.join()
             sniff2.join()
+
+            isDoneSniff_server_eth1 = isDoneSniff_eth0 = False
 
     except KeyboardInterrupt:
         print " Shutting down."

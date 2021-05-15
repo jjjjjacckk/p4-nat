@@ -224,9 +224,6 @@ class P4InfoHelper(object):
         if TTL is not None:
             print '[ helper ] TTL =', TTL
             table_entry.idle_timeout_ns = TTL
-        
-        # if TTL_LastHit is not None:
-        #     table_entry.time_since_last_hit = None
 
         if priority is not None:
             table_entry.priority = priority

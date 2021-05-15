@@ -29,6 +29,7 @@ counter_nat1_PortUsage = 0
 counter_nat2_PortUsage = 0
 timing_counter = 1              # <- temp use
 
+timing = []
 
 NATHostPort_counter = {"h1": 0, "h2": 0, "h3":0, "h4": 0}
 index2host = ["h1", "h2", "h3", "h4", "server1", "server2"]
@@ -409,252 +410,271 @@ digests_nat1 = p4runtime_pb2.StreamMessageRequest()
 digests_nat2 = p4runtime_pb2.StreamMessageRequest()
 
 def digest_threading1(nat, p4info_helper):
-    global digests_nat1, counter_nat1_PortUsage, timing_counter, seq_nat_1, seq_last_index_1
+    global digests_nat1, counter_nat1_PortUsage, timing_counter, seq_nat_1, seq_last_index_1, timing
 
-    print '[ digest_threading1 ] in digest threading'
-    digests_nat1 = nat.DigestList()
-    print '[ digest_threading1 ] digests_nat list'
+    try:
+        print '[ digest_threading1 ] in digest threading'
+        digests_nat1 = nat.DigestList()
+        print '[ digest_threading1 ] digests_nat list'
 
-    if digests_nat1.WhichOneof('update')=='digest':
-        print("Received DigestList message")
-        digest = digests_nat1.digest
-        digest_name = p4info_helper.get_digests_name(digest.digest_id)
-        print "===============================" 
-        print "Digest name: ", digest_name 
-        print "List ID: ", digest.digest_id
-        print 'digest = ', digests_nat1
-        print "===============================" 
-    
-        if digest_name == 'CandidatePortDigest':
-            for members in digest.data:
-                #print members
-                if members.WhichOneof('data')=='struct':
-                    # print byte_pbyte(members.struct.members[0].bitstring)
-                    # print '[ in loop ]', members, type(members), len(members)
-                    if members.struct.members[0].WhichOneof('data') == 'bitstring':
+        if digests_nat1.WhichOneof('update')=='digest':
+            print("Received DigestList message")
+            digest = digests_nat1.digest
+            digest_name = p4info_helper.get_digests_name(digest.digest_id)
+            print "===============================" 
+            print "Digest name: ", digest_name 
+            print "List ID: ", digest.digest_id
+            print 'digest = ', digests_nat1
+            print "===============================" 
+        
+            if digest_name == 'CandidatePortDigest':
+                for members in digest.data:
+                    #print members
+                    if members.WhichOneof('data')=='struct':
+                        # print byte_pbyte(members.struct.members[0].bitstring)
+                        # print '[ in loop ]', members, type(members), len(members)
+                        if members.struct.members[0].WhichOneof('data') == 'bitstring':
+                                othersideIP = prettify(members.struct.members[0].bitstring)
+                        if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                                hostIP = prettify(members.struct.members[1].bitstring)
+                        if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                                NATIP = prettify(members.struct.members[2].bitstring)
+                        if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                                othersidePort = int_prettify(members.struct.members[3].bitstring)
+                        if members.struct.members[4].WhichOneof('data') == 'bitstring':
+                                hostPort = int_prettify(members.struct.members[4].bitstring)
+                        if members.struct.members[5].WhichOneof('data') == 'bitstring':
+                                candidatePort = int_prettify(members.struct.members[5].bitstring)
+
+                        counter_nat1_PortUsage += 1 
+                        print '[ in loop NAT1 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
+                                % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+
+                        receiver = index2host[ip2HostIndex[hostIP]]
+                        print '[ in loop NAT1 ] receiver = ', receiver, 'counter_nat1_PortUsage = ', counter_nat1_PortUsage
+                        # insert relational information
+                        # ingress: 
+                        # match_ingress_nat_ip
+                        set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort, hostIP, 33333 + NATHostPort_counter[receiver])
+                        # match_sender: already installed in initialization stage
+                        # ipv4_lpm
+                        # set_ipv4_lpm(p4info_helper, nat, othersideIP, natDst2EgressPort[othersideIP])
+                        # send_frame: already installed in initialization stage
+                        
+                        # egress:
+                        # match_egress_nat_ip
+                        set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
+                        set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
+                        NATHostPort_counter[receiver] += 1
+
+                        # CandidatePort: already installed in initialization stage
+                        # send_frame: already installed in initialization stage
+                        # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, hostPort)
+                        # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, NATIP, candidatePort)
+            elif digest_name == 'AddNewNATEntry':
+                timing_counter += 1
+                for members in digest.data:
+                    #print members
+                    if members.WhichOneof('data')=='struct':
+                        if members.struct.members[0].WhichOneof('data') == 'bitstring':
                             othersideIP = prettify(members.struct.members[0].bitstring)
-                    if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                        if members.struct.members[1].WhichOneof('data') == 'bitstring':
                             hostIP = prettify(members.struct.members[1].bitstring)
-                    if members.struct.members[2].WhichOneof('data') == 'bitstring':
-                            NATIP = prettify(members.struct.members[2].bitstring)
-                    if members.struct.members[3].WhichOneof('data') == 'bitstring':
-                            othersidePort = int_prettify(members.struct.members[3].bitstring)
-                    if members.struct.members[4].WhichOneof('data') == 'bitstring':
-                            hostPort = int_prettify(members.struct.members[4].bitstring)
-                    if members.struct.members[5].WhichOneof('data') == 'bitstring':
-                            candidatePort = int_prettify(members.struct.members[5].bitstring)
+                        if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                            othersidePort = int_prettify(members.struct.members[2].bitstring)
+                        if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                            hostPort = int_prettify(members.struct.members[3].bitstring)
+                
+                    print '[ AddNewNATEntry ]', othersideIP, othersidePort, hostIP, hostPort
 
-                    counter_nat1_PortUsage += 1 
-                    print '[ in loop NAT1 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
-                            % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_1[seq_last_index_1], hostIP=hostIP, hostPort=hostPort, TTL=3000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=3000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=3000000000, TTL_LastHit=1)
+                    seq_last_index_1 += 1
+                    timing.append(time.ctime(time.time()))
+                
+                if timing_counter == 1000:
+                    with open('/home/p4/Desktop/p4-nat/test/TIME.txt', 'w+') as f:
+                        for ele in timing:
+                            f.write(str(ele) + '\n')
+                    timing = []
+        elif digests_nat1.WhichOneof('update') == 'idle_timeout_notification':
+            print '[ Anthoer than Digest ]', digests_nat1
+            temp = digests_nat1.idle_timeout_notification
+            print '[ Anthoer than Digest ]', temp
+            # print '[ Anthoer than Digest ]', temp.table_entry
+            for members in temp.table_entry:
+                # print '[ In Loop ]', type(members)
+                # print '[ In Loop ] members.table_id =', members.table_id
+                # print '[ In Loop ] type(members.match) =', type(members.match)
+                # print '[ In Loop ] len(members.match) =', len(members.match)
+                table_name = p4info_helper.get_tables_name(members.table_id)
+                print '[ In Loop ] table_name =', table_name
+                print '---------------------------------------------------------'
+                extracted = extractMatchField(table_name=table_name, match=members.match)
+                print '[ In Loop ] extractMatchField =', table_name, extracted
+                if table_name == 'match_ingress_nat_ip':
+                    delete_match_ingress_nat_ip(p4info_helper, nat, \
+                                                othersideIP=extracted['othersideIP'], \
+                                                othersidePort=extracted['othersidePort'], \
+                                                NATPort=extracted['NATPort'])
+                    print '[ In Loop ] delete_match_ingress_nat_ip'
+                elif table_name == 'match_egress_nat_ip':
+                    delete_match_egress_nat_ip(p4info_helper, nat, \
+                                                othersideIP=extracted['othersideIP'], \
+                                                othersidePort=extracted['othersidePort'], \
+                                                srcIP=extracted['srcIP'], \
+                                                srcPort=extracted['srcPort'])
+                    print '[ In Loop ] match_egress_nat_ip'
+                elif table_name == 'match_egress_nat_ip_method2':
+                    delete_match_egress_nat_ip_method2(p4info_helper, nat, \
+                                                        othersideIP=extracted['othersideIP'], \
+                                                        othersidePort=extracted['othersidePort'], \
+                                                        srcIP=extracted['srcIP'], \
+                                                        srcPort=extracted['srcPort'])
+                    print '[ In Loop ] match_egress_nat_ip_method2'
+                print '---------------------------------------------------------'
+    except KeyboardInterrupt:
+        print '[ digest_threading1 ] interrupt'
+        return 
 
-                    receiver = index2host[ip2HostIndex[hostIP]]
-                    print '[ in loop NAT1 ] receiver = ', receiver, 'counter_nat1_PortUsage = ', counter_nat1_PortUsage
-                    # insert relational information
-                    # ingress: 
-                    # match_ingress_nat_ip
-                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort, hostIP, 33333 + NATHostPort_counter[receiver])
-                    # match_sender: already installed in initialization stage
-                    # ipv4_lpm
-                    # set_ipv4_lpm(p4info_helper, nat, othersideIP, natDst2EgressPort[othersideIP])
-                    # send_frame: already installed in initialization stage
-                    
-                    # egress:
-                    # match_egress_nat_ip
-                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
-                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
-                    NATHostPort_counter[receiver] += 1
-
-                    # CandidatePort: already installed in initialization stage
-                    # send_frame: already installed in initialization stage
-                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, hostPort)
-                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, NATIP, candidatePort)
-        elif digest_name == 'AddNewNATEntry':
-            timing_counter += 1
-            for members in digest.data:
-                #print members
-                if members.WhichOneof('data')=='struct':
-                    if members.struct.members[0].WhichOneof('data') == 'bitstring':
-                        othersideIP = prettify(members.struct.members[0].bitstring)
-                    if members.struct.members[1].WhichOneof('data') == 'bitstring':
-                        hostIP = prettify(members.struct.members[1].bitstring)
-                    if members.struct.members[2].WhichOneof('data') == 'bitstring':
-                        othersidePort = int_prettify(members.struct.members[2].bitstring)
-                    if members.struct.members[3].WhichOneof('data') == 'bitstring':
-                        hostPort = int_prettify(members.struct.members[3].bitstring)
-            
-                print '[ AddNewNATEntry ]', othersideIP, othersidePort, hostIP, hostPort
-
-                set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_1[seq_last_index_1], hostIP=hostIP, hostPort=hostPort, TTL=3000000000, TTL_LastHit=1)
-                set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=3000000000, TTL_LastHit=1)
-                set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=3000000000, TTL_LastHit=1)
-                seq_last_index_1 += 1
-    elif digests_nat1.WhichOneof('update') == 'idle_timeout_notification':
-        print '[ Anthoer than Digest ]', digests_nat1
-        temp = digests_nat1.idle_timeout_notification
-        print '[ Anthoer than Digest ]', temp
-        # print '[ Anthoer than Digest ]', temp.table_entry
-        for members in temp.table_entry:
-            # print '[ In Loop ]', type(members)
-            # print '[ In Loop ] members.table_id =', members.table_id
-            # print '[ In Loop ] type(members.match) =', type(members.match)
-            # print '[ In Loop ] len(members.match) =', len(members.match)
-            table_name = p4info_helper.get_tables_name(members.table_id)
-            print '[ In Loop ] table_name =', table_name
-            print '---------------------------------------------------------'
-            extracted = extractMatchField(table_name=table_name, match=members.match)
-            print '[ In Loop ] extractMatchField =', table_name, extracted
-            if table_name == 'match_ingress_nat_ip':
-                delete_match_ingress_nat_ip(p4info_helper, nat, \
-                                            othersideIP=extracted['othersideIP'], \
-                                            othersidePort=extracted['othersidePort'], \
-                                            NATPort=extracted['NATPort'])
-                print '[ In Loop ] delete_match_ingress_nat_ip'
-            elif table_name == 'match_egress_nat_ip':
-                delete_match_egress_nat_ip(p4info_helper, nat, \
-                                            othersideIP=extracted['othersideIP'], \
-                                            othersidePort=extracted['othersidePort'], \
-                                            srcIP=extracted['srcIP'], \
-                                            srcPort=extracted['srcPort'])
-                print '[ In Loop ] match_egress_nat_ip'
-            elif table_name == 'match_egress_nat_ip_method2':
-                delete_match_egress_nat_ip_method2(p4info_helper, nat, \
-                                                    othersideIP=extracted['othersideIP'], \
-                                                    othersidePort=extracted['othersidePort'], \
-                                                    srcIP=extracted['srcIP'], \
-                                                    srcPort=extracted['srcPort'])
-                print '[ In Loop ] match_egress_nat_ip_method2'
-            print '---------------------------------------------------------'
 
 def digest_threading1_loop(nat, p4info_helper):
     try:
         while True:
             digest_threading1(nat, p4info_helper)
     except KeyboardInterrupt:
+        print '[ digest_threading1_loop ] interrupt'
         return 
     
 def digest_threading2(nat, p4info_helper):
     global  digests_nat2, counter_nat2_PortUsage, seq_nat_2, seq_last_index_2
 
-    print '[ digest_threading2 ] in digest threading'
-    digests_nat2 = nat.DigestList()
-    print '[ digest_threading2 ] digests_nat list'
+    try:
+        print '[ digest_threading2 ] in digest threading'
+        digests_nat2 = nat.DigestList()
+        print '[ digest_threading2 ] digests_nat list'
 
-    if digests_nat2.WhichOneof('update')=='digest':
-        print("Received DigestList message")
-        digest = digests_nat2.digest
-        digest_name = p4info_helper.get_digests_name(digest.digest_id)
-        print "===============================" 
-        print "Digest name: ", digest_name 
-        print "List ID: ", digest.digest_id
-        print 'digest = ', digests_nat2
-        print "===============================" 
-        if digest_name == 'CandidatePortDigest':
-            for members in digest.data:
-                #print members
-                if members.WhichOneof('data')=='struct':
-                    # print byte_pbyte(members.struct.members[0].bitstring)
-                    # print '[ in loop ]', members, type(members), len(members)
-                    if members.struct.members[0].WhichOneof('data') == 'bitstring':
+        if digests_nat2.WhichOneof('update')=='digest':
+            print("Received DigestList message")
+            digest = digests_nat2.digest
+            digest_name = p4info_helper.get_digests_name(digest.digest_id)
+            print "===============================" 
+            print "Digest name: ", digest_name 
+            print "List ID: ", digest.digest_id
+            print 'digest = ', digests_nat2
+            print "===============================" 
+            if digest_name == 'CandidatePortDigest':
+                for members in digest.data:
+                    #print members
+                    if members.WhichOneof('data')=='struct':
+                        # print byte_pbyte(members.struct.members[0].bitstring)
+                        # print '[ in loop ]', members, type(members), len(members)
+                        if members.struct.members[0].WhichOneof('data') == 'bitstring':
+                                othersideIP = prettify(members.struct.members[0].bitstring)
+                        if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                                hostIP = prettify(members.struct.members[1].bitstring)
+                        if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                                NATIP = prettify(members.struct.members[2].bitstring)
+                        if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                                othersidePort = int_prettify(members.struct.members[3].bitstring)
+                        if members.struct.members[4].WhichOneof('data') == 'bitstring':
+                                hostPort = int_prettify(members.struct.members[4].bitstring)
+                        if members.struct.members[5].WhichOneof('data') == 'bitstring':
+                                candidatePort = int_prettify(members.struct.members[5].bitstring)
+
+                        counter_nat2_PortUsage += 1 
+                        print '[ in loop NAT2 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
+                                % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+
+                        receiver = index2host[ip2HostIndex[hostIP]]
+                        print '[ in loop NAT2 ] receiver = ', receiver, 'counter_nat2_PortUsage = ', counter_nat2_PortUsage
+
+                        # insert relational information
+                        # ingress:
+                        # match_ingress_nat_ip
+                        set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort, hostIP, 33333 + NATHostPort_counter[receiver])
+                        # match_sender: already installed in initialization stage
+                        # ipv4_lpm
+                        # set_ipv4_lpm(p4info_helper, nat, othersideIP, nat2Dst2EgressPort[othersideIP])
+                        # send_frame: already installed in initialization stage
+                        
+                        # egress:
+                        # match_egress_nat_ip
+                        set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
+                        set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
+                        NATHostPort_counter[receiver] += 1
+                        # CandidatePort: already installed in initialization stage
+                        # send_frame: already installed in initialization stage
+
+                        # set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, hostIP, hostPort)
+                        # set_match_egress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, NATIP, candidatePort)
+            elif digest_name == 'AddNewNATEntry':
+                for members in digest.data:
+                    #print members
+                    if members.WhichOneof('data')=='struct':
+                        if members.struct.members[0].WhichOneof('data') == 'bitstring':
                             othersideIP = prettify(members.struct.members[0].bitstring)
-                    if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                        if members.struct.members[1].WhichOneof('data') == 'bitstring':
                             hostIP = prettify(members.struct.members[1].bitstring)
-                    if members.struct.members[2].WhichOneof('data') == 'bitstring':
-                            NATIP = prettify(members.struct.members[2].bitstring)
-                    if members.struct.members[3].WhichOneof('data') == 'bitstring':
-                            othersidePort = int_prettify(members.struct.members[3].bitstring)
-                    if members.struct.members[4].WhichOneof('data') == 'bitstring':
-                            hostPort = int_prettify(members.struct.members[4].bitstring)
-                    if members.struct.members[5].WhichOneof('data') == 'bitstring':
-                            candidatePort = int_prettify(members.struct.members[5].bitstring)
+                        if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                            othersidePort = int_prettify(members.struct.members[2].bitstring)
+                        if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                            hostPort = int_prettify(members.struct.members[3].bitstring)
+                
+                    print '[ AddNewNATEntry ]', othersideIP, othersidePort, hostIP, hostPort
 
-                    counter_nat2_PortUsage += 1 
-                    print '[ in loop NAT2 ] othersideIP = %s, othersidePort = %d\n\tNATIP = %s, candidatePort = %d\n\thostIP = %s, hostPort = %d' \
-                            % (othersideIP, othersidePort, NATIP, candidatePort, hostIP, hostPort)
+                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_2[seq_last_index_2], hostIP=hostIP, hostPort=hostPort, TTL=3000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_2[seq_last_index_2], TTL=3000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_2[seq_last_index_2], TTL=3000000000, TTL_LastHit=1)
+                    seq_last_index_2 += 1
+        elif digests_nat2.WhichOneof('update') == 'idle_timeout_notification':
+            print '[ Anthoer than Digest ]', digests_nat2
+            temp = digests_nat2.idle_timeout_notification
+            print '[ Anthoer than Digest ]', temp
+            # print '[ Anthoer than Digest ]', temp.table_entry
+            for members in temp.table_entry:
+                # print '[ In Loop ]', type(members)
+                # print '[ In Loop ] members.table_id =', members.table_id
+                # print '[ In Loop ] type(members.match) =', type(members.match)
+                # print '[ In Loop ] len(members.match) =', len(members.match)
+                table_name = p4info_helper.get_tables_name(members.table_id)
+                print '[ In Loop ] table_name =', table_name
+                print '---------------------------------------------------------'
+                extracted = extractMatchField(table_name=table_name, match=members.match)
+                print '[ In Loop ] extractMatchField =', table_name, extracted
+                if table_name == 'match_ingress_nat_ip':
+                    delete_match_ingress_nat_ip(p4info_helper, nat, \
+                                                othersideIP=extracted['othersideIP'], \
+                                                othersidePort=extracted['othersidePort'], \
+                                                NATPort=extracted['NATPort'])
+                    print '[ In Loop ] delete_match_ingress_nat_ip'
+                elif table_name == 'match_egress_nat_ip':
+                    delete_match_egress_nat_ip(p4info_helper, nat, \
+                                                othersideIP=extracted['othersideIP'], \
+                                                othersidePort=extracted['othersidePort'], \
+                                                srcIP=extracted['srcIP'], \
+                                                srcPort=extracted['srcPort'])
+                    print '[ In Loop ] match_egress_nat_ip'
+                elif table_name == 'match_egress_nat_ip_method2':
+                    delete_match_egress_nat_ip_method2(p4info_helper, nat, \
+                                                        othersideIP=extracted['othersideIP'], \
+                                                        othersidePort=extracted['othersidePort'], \
+                                                        srcIP=extracted['srcIP'], \
+                                                        srcPort=extracted['srcPort'])
+                    print '[ In Loop ] match_egress_nat_ip_method2'
+                print '---------------------------------------------------------'
+    except KeyboardInterrupt:
+        print '[ digest_threading2 ] interrupt'
+        return 
 
-                    receiver = index2host[ip2HostIndex[hostIP]]
-                    print '[ in loop NAT2 ] receiver = ', receiver, 'counter_nat2_PortUsage = ', counter_nat2_PortUsage
-
-                    # insert relational information
-                    # ingress:
-                    # match_ingress_nat_ip
-                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort, hostIP, 33333 + NATHostPort_counter[receiver])
-                    # match_sender: already installed in initialization stage
-                    # ipv4_lpm
-                    # set_ipv4_lpm(p4info_helper, nat, othersideIP, nat2Dst2EgressPort[othersideIP])
-                    # send_frame: already installed in initialization stage
-                    
-                    # egress:
-                    # match_egress_nat_ip
-                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
-                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, hostIP, 33333 + NATHostPort_counter[receiver], NATIP, candidatePort)
-                    NATHostPort_counter[receiver] += 1
-                    # CandidatePort: already installed in initialization stage
-                    # send_frame: already installed in initialization stage
-
-                    # set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, hostIP, hostPort)
-                    # set_match_egress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, NATIP, candidatePort)
-        elif digest_name == 'AddNewNATEntry':
-            for members in digest.data:
-                #print members
-                if members.WhichOneof('data')=='struct':
-                    if members.struct.members[0].WhichOneof('data') == 'bitstring':
-                        othersideIP = prettify(members.struct.members[0].bitstring)
-                    if members.struct.members[1].WhichOneof('data') == 'bitstring':
-                        hostIP = prettify(members.struct.members[1].bitstring)
-                    if members.struct.members[2].WhichOneof('data') == 'bitstring':
-                        othersidePort = int_prettify(members.struct.members[2].bitstring)
-                    if members.struct.members[3].WhichOneof('data') == 'bitstring':
-                        hostPort = int_prettify(members.struct.members[3].bitstring)
-            
-                print '[ AddNewNATEntry ]', othersideIP, othersidePort, hostIP, hostPort
-
-                set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_2[seq_last_index_2], hostIP=hostIP, hostPort=hostPort, TTL=3000000000, TTL_LastHit=1)
-                set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_2[seq_last_index_2], TTL=3000000000, TTL_LastHit=1)
-                set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_2[seq_last_index_2], TTL=3000000000, TTL_LastHit=1)
-                seq_last_index_2 += 1
-    elif digests_nat2.WhichOneof('update') == 'idle_timeout_notification':
-        print '[ Anthoer than Digest ]', digests_nat2
-        temp = digests_nat2.idle_timeout_notification
-        print '[ Anthoer than Digest ]', temp
-        # print '[ Anthoer than Digest ]', temp.table_entry
-        for members in temp.table_entry:
-            # print '[ In Loop ]', type(members)
-            # print '[ In Loop ] members.table_id =', members.table_id
-            # print '[ In Loop ] type(members.match) =', type(members.match)
-            # print '[ In Loop ] len(members.match) =', len(members.match)
-            table_name = p4info_helper.get_tables_name(members.table_id)
-            print '[ In Loop ] table_name =', table_name
-            print '---------------------------------------------------------'
-            extracted = extractMatchField(table_name=table_name, match=members.match)
-            print '[ In Loop ] extractMatchField =', table_name, extracted
-            if table_name == 'match_ingress_nat_ip':
-                delete_match_ingress_nat_ip(p4info_helper, nat, \
-                                            othersideIP=extracted['othersideIP'], \
-                                            othersidePort=extracted['othersidePort'], \
-                                            NATPort=extracted['NATPort'])
-                print '[ In Loop ] delete_match_ingress_nat_ip'
-            elif table_name == 'match_egress_nat_ip':
-                delete_match_egress_nat_ip(p4info_helper, nat, \
-                                            othersideIP=extracted['othersideIP'], \
-                                            othersidePort=extracted['othersidePort'], \
-                                            srcIP=extracted['srcIP'], \
-                                            srcPort=extracted['srcPort'])
-                print '[ In Loop ] match_egress_nat_ip'
-            elif table_name == 'match_egress_nat_ip_method2':
-                delete_match_egress_nat_ip_method2(p4info_helper, nat, \
-                                                    othersideIP=extracted['othersideIP'], \
-                                                    othersidePort=extracted['othersidePort'], \
-                                                    srcIP=extracted['srcIP'], \
-                                                    srcPort=extracted['srcPort'])
-                print '[ In Loop ] match_egress_nat_ip_method2'
-            print '---------------------------------------------------------'
 
 def digest_threading2_loop(nat, p4info_helper):
     try:
         while True:
             digest_threading2(nat, p4info_helper)
     except KeyboardInterrupt:
+        print '[ digest_threading2_loop ] interrupt'
         return 
 
 def digest_threading(NATNum, nat, p4info_helper):
@@ -737,6 +757,7 @@ def main(p4info_file_path, bmv2_file_path, method):
 
     # Generate source port sequence
     global seq_nat_1, seq_nat_2, seq_last_index_1, seq_last_index_2, counter_nat1_PortUsage, counter_nat2_PortUsage, timing_counter
+    global timing
     seq_nat_1 = random.sample(range(0, 65536), 65536)
     seq_nat_2 = random.sample(range(0, 65536), 65536)
 
@@ -827,7 +848,7 @@ def main(p4info_file_path, bmv2_file_path, method):
         
         
 
-
+        # TODO: only when method1 is tested fine with line 798~843 can i delete the code comment below
         '''
         start = time.time()
         end = start
@@ -1099,7 +1120,7 @@ def main(p4info_file_path, bmv2_file_path, method):
         print " Shutting down."
     except grpc.RpcError as e:
         printGrpcError(e)
-
+    
     ShutdownAllSwitchConnections()
 
 

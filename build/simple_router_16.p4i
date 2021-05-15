@@ -1106,7 +1106,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             0xffffffff
         });
     }
-
     @name(".set_sender") action set_sender(bit<16> number) {
         hdr.p2pEst.whoAmI = number;
     }
