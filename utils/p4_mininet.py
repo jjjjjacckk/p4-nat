@@ -136,7 +136,8 @@ class P4Switch(Switch):
             args.append("--debugger")
         if self.log_console:
             args.append("--log-console")
-        info(' '.join(args) + "\n")
+        # info(' '.join(args) + "\n")
+        error("P4 switch {} did not start correctly.\n".format(self.name))
 
         pid = None
         with tempfile.NamedTemporaryFile() as f:

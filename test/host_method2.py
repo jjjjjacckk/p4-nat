@@ -5,11 +5,12 @@ import socket
 import random
 import struct
 import time
+import threading
 
 from scapy.all import sendp, send, get_if_list, get_if_hwaddr
 from scapy.all import Packet
 from scapy.all import Ether, IP, UDP, TCP, Raw, ICMP
-from scapy.fields import BitField, IntField, ShortField, IPField
+from scapy.fields import BitField, IntField, ShortField, IPField, StrStopField
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
 
 index2addr = ["10.0.1.1", "10.0.2.2", "192.168.3.3", "192.168.4.4", "140.116.0.1", "140.116.0.2"]
@@ -31,7 +32,12 @@ resendPort = 0
 param_whoAmI = ''
 param_whom2connect = ''
 
+# isReceiveCheck_IsWait = False
+# isReceiveCheck_IsNotWait = False
+isDoneSendP = False
 isDoneSniff = False
+isWait = False          # when your index has bigger index, you'll have to wait until the host with
+                        # smaller index finish adding 500 (not determined yet) temporary NAT table entries
 
 def get_if():
     ifs=get_if_list()
@@ -47,9 +53,12 @@ def get_if():
 
 def getIsDoneSniff(x):
     # parameter "x" is given by sniff function
-    global isDoneSniff
-    return isDoneSniff
+    global isDoneSniff, isDoneSendP
 
+    if isDoneSendP:
+        return isDoneSendP
+    else:
+        return isDoneSniff
 
 class p2pEst(Packet):
     name = 'p2pEst'
@@ -64,7 +73,6 @@ class p2pEst(Packet):
         BitField("whom2Connect", 0, 11),
         BitField("isEstPacket", 0, 4),
     ]
-
 
 def getRawInfo(packet, index):
     msg = packet[Raw].load
@@ -113,6 +121,39 @@ def checkPacket(packet, queryNum):
 
     return True
 
+def SendP_threading(HostSrcPortList, randomDstPort):
+    global param_whoAmI, param_whom2connect, isDoneSendP, isDoneSniff
+    print '[ SendP_threading ] isDoneSniff =', isDoneSniff, isDoneSendP
+    for i in range(0, 300):
+        print '[ SendP_threading ] i =', i
+        if not isDoneSniff:     # early stopping
+            packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
+                                    sp=HostSrcPortList[i], dp=randomDstPort)
+            # print '[ handle_pkt_query2 ] packet ='
+            # packet.show() 
+            sendp(packet, iface='eth0', verbose=False)
+            print 'send %dth packet' % i
+            time.sleep(0.05)
+        else:
+            break
+    
+    isDoneSendP = True
+
+    
+
+def Sniff_threading():
+    print '[ Sniff_threading ]'
+    sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff)
+
+def handle_pkt_receive(pkt):
+    print '[ handle_pkt_receive ]'
+    global param_whoAmI, isDoneSniff
+    if UDP in pkt:
+        if pkt[IP].dst == index2addr[int(param_whoAmI[1]) - 1]:
+            isDoneSniff = True
+        
+
+
 def handle_pkt_query1(pkt):
     global isDoneSniff, connection_counter, resendPort
     # if TCP in pkt and pkt[TCP].dport == 1234:
@@ -147,14 +188,13 @@ def handle_pkt_query1(pkt):
 
 def handle_pkt_query2(pkt):
     print '[ handle_pkt_query2 ] processing'
-    global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI
+    global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI, isWait
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
         pkt.show()
 
         if checkPacket(pkt, 2):
-            isDoneSniff = True
 
             # send 1000 packet to otherside:
             #   - with same dst port
@@ -178,17 +218,37 @@ def handle_pkt_query2(pkt):
 
             HostSrcPortList.sort()
 
-            # send packets
-            # FIXME: when reach over 500 
-            # controller terminte with unknown reason :(((((
-            for i in range(0, 500):
-                packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-                                        sp=HostSrcPortList[i], dp=randomDstPort)
-                # print '[ handle_pkt_query2 ] packet ='
-                # packet.show() 
-                sendp(packet, iface='eth0', verbose=False)
-                print 'send %dth packet' % i
-                time.sleep(0.05)
+            if not isWait:
+                print '[ handle_pkt_query2 ] threading.... NotWait'
+                # send packets
+                # FIXME: when reach over 500 
+                # controller terminte with unknown reason :(((((
+                for i in range(0, 300):
+                    packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
+                                            sp=HostSrcPortList[i], dp=randomDstPort)
+                    # print '[ handle_pkt_query2 ] packet ='
+                    # packet.show() 
+                    sendp(packet, iface='eth0', verbose=False)
+                    print 'send %dth packet' % i
+                    time.sleep(0.05)
+                    
+            else:
+                # FIXME: modify the time, make sure not to wait too long
+                print '[ handle_pkt_query2 ] threading.... Wait'
+                time.sleep(30)
+                
+                thread1 = threading.Thread(target=Sniff_threading)
+                thread2 = threading.Thread(target=SendP_threading, args=(HostSrcPortList, randomDstPort))
+
+                thread1.start()
+                thread2.start()
+
+                thread1.join()
+                thread2.join()
+
+            isDoneSniff = True
+                
+
 
             # packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
             #                         sp=HostSrcPortList[0], dp=randomDstPort)
@@ -226,7 +286,7 @@ def buildpacket(whoAmI, whom2connect, dstAddr, sp, dp, Q1packet=None):
     return pkt
 
 def main():
-    global resendPort, isDoneSniff, param_whom2connect, param_whoAmI
+    global resendPort, isDoneSniff, param_whom2connect, param_whoAmI, isWait
 
     if len(sys.argv) < 3:
         print 'pass 2 arguments: <whoAmI> <whom to connect>'
@@ -235,6 +295,10 @@ def main():
     param_whoAmI = sys.argv[1]
     param_whom2connect = sys.argv[2]
     
+    # When your index has bigger index, you'll have to wait until the host with
+    # smaller index finish adding 500 (not determined yet) temporary NAT table entries
+    if param_whoAmI[1] > param_whom2connect[1]:
+        isWait = True
 
 
 
@@ -259,6 +323,9 @@ def main():
     # sniff from server2
     sniff(iface='eth0', prn=handle_pkt_query2, stop_filter=getIsDoneSniff)
     isDoneSniff = False
+
+    if not isWait:
+        sniff(iface='eth0', prn= handle_pkt_receive, stop_filter=getIsDoneSniff)
 
 
 
