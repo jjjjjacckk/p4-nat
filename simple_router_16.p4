@@ -142,6 +142,13 @@ struct CandidatePortDigest {
     bit<16> NATPort;        // NAT Port
 }
 
+struct Method2Hit {         // otherside into host
+    bit<32> othersideIP;    
+    bit<32> hostIP;          // NAT IP
+    bit<16> othersidePort;
+    bit<16> hostPort;        // NAT Port
+}
+
 struct AddNewNATEntry {
     bit<32> othersideIP;    
     bit<32> hostIP;         // local IP
@@ -358,6 +365,14 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                                                       hdr.p2pEst.candidatePort         // Candidate Port for this connection
                                                     });
     }
+    @name("_DIGEST_Method2Hit") action _DIGEST_Method2Hit() {
+        // parameters are following the sequence in "CandidatePortDigest" struct
+        digest<Method2Hit>( (bit<32>)1024, { hdr.ipv4.srcAddr,      // otherside IP
+                                             hdr.ipv4.dstAddr,      // host IP
+                                             hdr.udp.srcPort,       // otherside Port
+                                             hdr.udp.dstPort       // host port
+                                            });
+    }
     @name("_DIGEST_AddNewNATEntry") action _DIGEST_AddNewNATEntry() {
         // Digest info to controller to add new EgressTaleEntry
         // Digest = send info to controller
@@ -387,6 +402,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         key = { }
         size = 1024;
         default_action = _DIGEST_AddNewNATEntry();
+    }
+    @name(".TableMethod2Hit") table TableMethod2Hit {
+        actions = { _DIGEST_Method2Hit; }
+        key = { }
+        size = 1024;
+        default_action = _DIGEST_Method2Hit();
     }
     @name(".send_info2controller") table send_info2controller {
         actions = { _DIGEST_Ingress; }
@@ -495,12 +516,22 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
                     }
                 } else {
-                    if (hdr.p2pEst.isValid()) {
+                    if (hdr.ipv4.srcAddr == 32w2356412420 || hdr.ipv4.srcAddr == 32w2356412419) {
+                        // Method 2: Succeed
+                        // send pairing to controller to prolong the TTL of the entry
+                        // 2356412420 = 1401160004 -> 140.116.0.4
+                        // 2356412419 = 1401160003 -> 140.116.0.3
+                        TableMethod2Hit.apply();
+                    }
+
+
+                    // TODO: I add "hdr.p2pEst.isEstPacket == 4w1" on 5/16 22:59
+                    if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 4w1) {
                         // for method 1
                         // return from server of Establish P2P connection
                         if (hdr.p2pEst.direction == 1w1 && hdr.p2pEst.isEstPacket == 4w1) 
                             send_info2controller.apply();
-                    }
+                    } 
                 }
             }
             ipv4_lpm.apply();

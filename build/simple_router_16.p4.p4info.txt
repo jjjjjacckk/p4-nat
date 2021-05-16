@@ -34,6 +34,17 @@ tables {
 }
 tables {
   preamble {
+    id: 33557765
+    name: "TableMethod2Hit"
+    alias: "TableMethod2Hit"
+  }
+  action_refs {
+    id: 16816571
+  }
+  size: 1024
+}
+tables {
+  preamble {
     id: 33573970
     name: "send_info2controller"
     alias: "send_info2controller"
@@ -356,6 +367,13 @@ actions {
 }
 actions {
   preamble {
+    id: 16816571
+    name: "MyIngress._DIGEST_Method2Hit"
+    alias: "_DIGEST_Method2Hit"
+  }
+}
+actions {
+  preamble {
     id: 16811295
     name: "MyIngress._DIGEST_AddNewNATEntry"
     alias: "_DIGEST_AddNewNATEntry"
@@ -433,6 +451,18 @@ digests {
   type_spec {
     struct {
       name: "CandidatePortDigest"
+    }
+  }
+}
+digests {
+  preamble {
+    id: 385936166
+    name: "Method2Hit"
+    alias: "Method2Hit"
+  }
+  type_spec {
+    struct {
+      name: "Method2Hit"
     }
   }
 }
@@ -549,6 +579,51 @@ type_info {
       }
       members {
         name: "NATPort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 16
+            }
+          }
+        }
+      }
+    }
+  }
+  structs {
+    key: "Method2Hit"
+    value {
+      members {
+        name: "othersideIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "hostIP"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      members {
+        name: "othersidePort"
+        type_spec {
+          bitstring {
+            bit {
+              bitwidth: 16
+            }
+          }
+        }
+      }
+      members {
+        name: "hostPort"
         type_spec {
           bitstring {
             bit {
