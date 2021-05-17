@@ -507,27 +507,26 @@ def digest_threading1(nat, p4info_helper):
 
                     # # Original Code
                     # # FIXME: is the TTL OK ?????
-                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_1[seq_last_index_1], hostIP=hostIP, hostPort=hostPort, TTL=50*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=50*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=50*1000000000, TTL_LastHit=1)
-                    #
-                    # # record entries
-                    # key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
-                    # NewNATEntryMapping[key] = seq_nat_1[seq_last_index_1]
-                    #
-                    # seq_last_index_1 += 1
-                    # timing.append(time.ctime(time.time()))
+                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_1[seq_last_index_1], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=120*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=120*1000000000, TTL_LastHit=1)
+                    
+                    # record entries
+                    key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
+                    NewNATEntryMapping[key] = seq_nat_1[seq_last_index_1]
+                    
+                    seq_last_index_1 += 1
+                    timing.append(time.ctime(time.time()))
 
                     # FIXME: TEST method2
-                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_1], hostIP=hostIP, hostPort=hostPort, TTL=50*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=50*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=50*1000000000, TTL_LastHit=1)
+                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_1], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=120*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=120*1000000000, TTL_LastHit=1)
 
-                    key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
-                    NewNATEntryMapping[key] = testNATPort[test_counter_1]
-                    test_counter_1 += 1
+                    # key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
+                    # NewNATEntryMapping[key] = testNATPort[test_counter_1]
+                    # test_counter_1 += 1
 
-                
                 if timing_counter == 1000:
                     with open('/home/p4/Desktop/p4-nat/test/TIME.txt', 'w+') as f:
                         for ele in timing:
@@ -700,21 +699,26 @@ def digest_threading2(nat, p4info_helper):
                 
                     print '[ AddNewNATEntry ]', othersideIP, othersidePort, hostIP, hostPort
 
-                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_2[seq_last_index_2], hostIP=hostIP, hostPort=hostPort, TTL=50*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=50*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=50*1000000000, TTL_LastHit=1)
-                    #
-                    # seq_last_index_2 += 1
+                    # ORIGINAL CODE
+                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_2[seq_last_index_2], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=120*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=120*1000000000, TTL_LastHit=1)
+                    
+                    # record the NAT Info
+                    key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
+                    NewNATEntryMapping[key] = seq_nat_2[seq_last_index_2]
+
+                    seq_last_index_2 += 1
                     
                     # FIXME: TEST code
-                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_2], hostIP=hostIP, hostPort=hostPort, TTL=50*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=50*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=50*1000000000, TTL_LastHit=1)
+                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_2], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=120*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=120*1000000000, TTL_LastHit=1)
 
-                    key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
-                    NewNATEntryMapping[key] = testNATPort[test_counter_2]
+                    # key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
+                    # NewNATEntryMapping[key] = testNATPort[test_counter_2]
 
-                    test_counter_2 += 1
+                    # test_counter_2 += 1
             elif digest_name == 'Method2Hit':
                 for members in digest.data:
                     #print members

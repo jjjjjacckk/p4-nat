@@ -153,45 +153,59 @@ def SendP_threading(HostSrcPortList, randomDstPort):
     print '[ SendP_threading ] isDoneSniff =', isDoneSniff, isDoneSendP
     
     # ORIGINAL CODE
-    # for i in range(0, 1000):
+    for two in range(0, 2):
+        isEarlyStop = False
+        for i in range(0, 1000):
+            print '[ SendP_threading ] i =', i
+            if not isDoneSniff:     # early stopping
+                packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
+                                        sp=HostSrcPortList[i], dp=randomDstPort, isTEST=True)
+                # print '[ handle_pkt_query2 ] packet ='
+                # packet.show() 
+
+
+                # send twice two catch packet
+                # print '[ SendP_threading ] send first one'
+                # sendp(packet, iface='eth0', verbose=False)
+                # time.sleep(0.02)
+                
+                print '[ SendP_threading ] send second one'
+                sendp(packet, iface='eth0', verbose=False)
+                print 'send %dth packet' % i
+                time.sleep(0.02)
+            else:
+                isEarlyStop = True
+                break
+        if isEarlyStop:
+            break
+
+    # FIXME: TEST code
+    # for i in range(0, 1):
     #     print '[ SendP_threading ] i =', i
     #     if not isDoneSniff:     # early stopping
     #         packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-    #                                 sp=HostSrcPortList[i], dp=randomDstPort)
+    #                                 sp=testSrcPort[i], dp=556, isTEST=True)
     #         # print '[ handle_pkt_query2 ] packet ='
-    #         # packet.show() 
+    #         packet.show()
+
+    #         # send twice two catch packet
+    #         print '[ SendP_threading ] send first one'
+    #         sendp(packet, iface='eth0', verbose=False)
+    #         time.sleep(0.005)
+            
+    #         print '[ SendP_threading ] send second one'
     #         sendp(packet, iface='eth0', verbose=False)
     #         print 'send %dth packet' % i
     #         time.sleep(0.02)
     #     else:
     #         break
-
-    # FIXME: TEST code
-    for i in range(0, 1):
-        print '[ SendP_threading ] i =', i
-        if not isDoneSniff:     # early stopping
-            packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-                                    sp=testSrcPort[i], dp=556, isTEST=True)
-            # print '[ handle_pkt_query2 ] packet ='
-            packet.show()
-
-            print '[ SendP_threading ] send first one'
-            sendp(packet, iface='eth0', verbose=False)
-            time.sleep(1)
-            
-            print '[ SendP_threading ] send first one'
-            sendp(packet, iface='eth0', verbose=False)
-            print 'send %dth packet' % i
-            time.sleep(0.02)
-        else:
-            break
     
     isDoneSendP = True
     print '[ SendP_threading ] Leaving'
 
 def Sniff_threading():
     print '[ Sniff_threading ]'
-    sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff, timeout=60)
+    sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff, timeout=70)
 
 def handle_pkt_receive(pkt):
     print '[ handle_pkt_receive ]'
@@ -279,33 +293,33 @@ def handle_pkt_query2(pkt):
             if not isWait:
                 print '[ handle_pkt_query2 ] threading.... NotWait'
                 # send packets
-                # FIXME: when reach over 500 
-                # controller terminte with unknown reason :(((((
-                # for i in range(0, 1000):
-                #     packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-                #                             sp=HostSrcPortList[i], dp=randomDstPort)
-                #     # print '[ handle_pkt_query2 ] packet ='
-                #     # packet.show() 
-                #     sendp(packet, iface='eth0', verbose=False)
-                #     print 'send %dth packet' % i
-                #     time.sleep(0.02)
-
-                # FIXME: TEST code
-                for i in range(0, 1):
+                # ORIGINAL CODE
+                for i in range(0, 1000):
                     packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-                                            sp=testSrcPort[i], dp=556, isTEST=True)
+                                            sp=HostSrcPortList[i], dp=randomDstPort, isTEST=True)
                     # print '[ handle_pkt_query2 ] packet ='
-                    packet.show() 
+                    # packet.show() 
                     sendp(packet, iface='eth0', verbose=False)
                     print 'send %dth packet' % i
                     time.sleep(0.02)
+
+                # FIXME: TEST code
+                # for i in range(0, 1):
+                #     packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
+                #                             sp=testSrcPort[i], dp=556, isTEST=True)
+                #     # print '[ handle_pkt_query2 ] packet ='
+                #     packet.show() 
+                #     sendp(packet, iface='eth0', verbose=False)
+                #     print 'send %dth packet' % i
+                #     time.sleep(0.02)
                     
+                isDoneSniff = True
             else:
                 # FIXME: modify the time, make sure not to wait too long
                 print '[ handle_pkt_query2 ] threading.... Wait'
 
                 # FIXME: I change 60s -> 30s
-                time.sleep(10)
+                time.sleep(60)
                 
                 thread1 = threading.Thread(target=Sniff_threading)
                 thread2 = threading.Thread(target=SendP_threading, args=(HostSrcPortList, randomDstPort))
@@ -318,7 +332,6 @@ def handle_pkt_query2(pkt):
                 thread2.join()
                 print '[ handle_pkt_query2 ] thread1 finished'
 
-            isDoneSniff = True
                 
 
 
@@ -401,12 +414,12 @@ def main():
 
     print '[ Main ] Sniff 2'
     # sniff from server2
-    sniff(iface='eth0', prn=handle_pkt_query2, stop_filter=getIsDoneSniff)
-    isDoneSniff = False
+    sniff(iface='eth0', prn=handle_pkt_query2, stop_filter=getIsDoneSniff, timeout=5)
 
     print '[ Main ] Sniff 3'
     if not isWait:
-        sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff, timeout=60)
+        isDoneSniff = False
+        sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff, timeout=120)
         
         # TODO: send info to server1 to report whether we establish the connection or not
         # TODO: 
