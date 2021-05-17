@@ -167,13 +167,19 @@ def SendP_threading(HostSrcPortList, randomDstPort):
     #         break
 
     # FIXME: TEST code
-    for i in range(0, 5):
+    for i in range(0, 1):
         print '[ SendP_threading ] i =', i
         if not isDoneSniff:     # early stopping
             packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-                                    sp=testSrcPort[i], dp=582)
+                                    sp=testSrcPort[i], dp=556, isTEST=True)
             # print '[ handle_pkt_query2 ] packet ='
-            packet.show() 
+            packet.show()
+
+            print '[ SendP_threading ] send first one'
+            sendp(packet, iface='eth0', verbose=False)
+            time.sleep(1)
+            
+            print '[ SendP_threading ] send first one'
             sendp(packet, iface='eth0', verbose=False)
             print 'send %dth packet' % i
             time.sleep(0.02)
@@ -193,6 +199,9 @@ def handle_pkt_receive(pkt):
     if UDP in pkt:
         if pkt[IP].dst == index2addr[int(param_whoAmI[1]) - 1]:
             print '[ handle_pkt_receive ] in UDP: TRUE'
+
+            # spair time for controller to prolong the TTL of hit table entry
+            time.sleep(1)
 
             if not isWait:
                 # TODO: Send back the packet
@@ -282,9 +291,9 @@ def handle_pkt_query2(pkt):
                 #     time.sleep(0.02)
 
                 # FIXME: TEST code
-                for i in range(0, 5):
+                for i in range(0, 1):
                     packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
-                                            sp=testSrcPort[i], dp=582)
+                                            sp=testSrcPort[i], dp=556, isTEST=True)
                     # print '[ handle_pkt_query2 ] packet ='
                     packet.show() 
                     sendp(packet, iface='eth0', verbose=False)
