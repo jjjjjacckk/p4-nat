@@ -26,6 +26,7 @@ connection_counter = 0      # record the index of connection
 
 resendPort = 0
 whom2connect = ''
+whomAmI = ''
 
 
 '''
@@ -109,8 +110,13 @@ def getIsDoneSniff(x):
     global isDoneSniff
     return isDoneSniff
 
+def getIsDoneSniff_RecTest(x):
+    # parameter "x" is given by sniff function
+    global isDoneSniff_RecTest
+    return isDoneSniff_RecTest
+
 def handle_pkt(pkt):
-    global isDoneSniff, connection_counter, resendPort
+    global isDoneSniff, connection_counter, resendPort, whom2connect, whomAmI
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -138,18 +144,44 @@ def handle_pkt(pkt):
             new_pkt.show()
             print '[ HOST: packet to be sent out! ] END! (connection check)\n'
 
-            time.sleep(1)
-            sendp(new_pkt, iface='eth0', verbose=False)
 
+            # Sending Testing Packets
+            # host with smaller index send tset packet first, and then sniff respond packet
+            # host with greater index sniff respond packet first, and then send test packet 
+            if int(whomAmI[1]) < int(whom2connect[1]):
+                time.sleep(1)       # wait the otherside to start "sniff()"
+
+                sendp_thread = threading.Thread(target=sendp, kwargs=dict(x=new_pkt, iface='eth0', verbose=False))
+                sniff_thread = threading.Thread(target=sniff, kwargs=dict(iface='eth0',
+                                                                          prn=handle_pkt_rec_test,
+                                                                          stop_filter=getIsDoneSniff_RecTest))
+
+                sendp_thread.start()
+                sniff_thread.start()
+
+                sendp_thread.join()
+                print '[ HOST ] sendp_thread'
+                sniff_thread.join()
+                print '[ HOST ] sniff_thread'
+
+                # print '[ HOST ] smaller: sending...'
+                # sendp(new_pkt, iface='eth0', verbose=False)
+                # print '[ HOST ] smaller: receiving...'
+                # sniff(iface='eth0', prn=handle_pkt_rec_test, stop_filter=getIsDoneSniff_RecTest)
+            else:
+                print '[ HOST ] greater: receiving...'
+                sniff(iface='eth0', prn=handle_pkt_rec_test, stop_filter=getIsDoneSniff_RecTest)
+                time.sleep(1)
+                print '[ HOST ] greater: sending...'
+                sendp(new_pkt, iface='eth0', verbose=False)
 
         sys.stdout.flush()
-        print 'HERE'
         isDoneSniff = True
     elif ICMP in pkt:
         pkt.show2()
 
 def handle_pkt_rec_test(pkt):
-    global isDoneSniff_RecTest, connection_counter, resendPort, whom2connect
+    global isDoneSniff_RecTest, connection_counter, resendPort, whom2connect, whomAmI
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -164,7 +196,8 @@ def handle_pkt_rec_test(pkt):
         pkt.show()
         print '[ handle_pkt_rec_test ] END!\n'
         
-        testMSG = 'trails from %s' % whom2connect
+        testMSG = 'trials from %s' % whom2connect
+        print '[ handle_pkt_rec_test ] testMSG =', testMSG
         if pkt[Raw].load.find(testMSG) != -1:
             print '[ handle_pkt_rec_test ] SUCCEED!'
             pkt.show()
@@ -181,11 +214,11 @@ def handle_pkt_rec_test(pkt):
 
 
 def main():
-    global resendPort, whom2connect, isDoneSniff
+    global resendPort, whom2connect, isDoneSniff, whomAmI
 
     if len(sys.argv) < 5:
         print 'pass 4 arguments: <server> <whoAmI> <whom2connect> <resentPort>'
-        exit(1)
+        sys.exit(1)
 
     # <server> <whoAmI> <whom2connect> <resentPort>
     # addr
@@ -196,8 +229,12 @@ def main():
     elif sys.argv[1] == 'server2':
         addr = socket.gethostbyname('140.116.0.2')
         sp = 22222
+    else:
+        print 'argument <server> wrong'
+        sys.exit(1)
 
     # dp
+    whomAmI = sys.argv[2]
     if sys.argv[2] == 'h1':
         dp = 1111
     elif sys.argv[2] == 'h2':
@@ -206,34 +243,26 @@ def main():
         dp = 3333
     elif sys.argv[2] == 'h4':
         dp = 4444
+    else:
+        print 'argument <whoAmI> wrong'
+        sys.exit(1)
     
     # whom2connect
-    whom2connect = int(sys.argv[3][1]) - 1
+    whom2connect = sys.argv[3]
+    if whom2connect not in ['h1', 'h2', 'h3', 'h4']:
+        print 'argument <whom2connect> wrong'
+        sys.exit(1)
     print 'whom2connect: ', whom2connect
     
     # resentPort
     resendPort = int(sys.argv[4])
-
-    # addr = socket.gethostbyname(sys.argv[1])
-    # #iface = get_if() 
-    # dp = sys.argv[3]
-    # sp = sys.argv[4]
-    # resendPort = sys.argv[6]
-
-    # # compare 
-    # print 'addr :', addr
-    # print 'dp: ', dp
-    # print 'sp: ', sp
-    # print 'resendPort: ', resendPort
-    # print 'msg: ', sys.argv[2]
-
 
     print "sending on interface %s to %s" % ('eth0', str(addr))
     # print 'get_if_hwaddr(iface) ', get_if_hwaddr('eth0')
     pkt =  Ether(src=get_if_hwaddr("eth0"), dst='ff:ff:ff:ff:ff:ff')
 
     # pkt = pkt / IP(dst=addr) / UDP(dport=int(dp), sport=int(sp)) / p2pEst(whom2Connect=int(sys.argv[5]), direction=0, isEstPacket=1) / sys.argv[2]
-    pkt = pkt / IP(dst=addr) / UDP(dport=dp, sport=sp) / p2pEst(whom2Connect=whom2connect, direction=0, isEstPacket=1) / sys.argv[2]
+    pkt = pkt / IP(dst=addr) / UDP(dport=dp, sport=sp) / p2pEst(whom2Connect=int(whom2connect[1])-1, direction=0, isEstPacket=1) / sys.argv[2]
 
     print '[ HOST: packet to be sent out! ] START! (establish connection)'
     pkt.show()
@@ -247,7 +276,6 @@ def main():
     #         print "sniffing on %s" % 'eth0'
     #         sniff(iface='eth0', prn=handle_pkt, stop_filter=getIsDoneSniff)
     sniff(iface='eth0', prn=handle_pkt, stop_filter=getIsDoneSniff)
-    sniff(iface='eth0', prn=handle_pkt_rec_test, stop_filter=getIsDoneSniff)
 
 if __name__ == '__main__':
     main()
