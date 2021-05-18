@@ -4,6 +4,7 @@ import struct
 import socket
 import os
 import threading
+import time
 
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
 from scapy.all import Packet, IPOption
@@ -226,6 +227,7 @@ def main():
     # iface = sys.argv[1]
     # print "sniffing on %s" % iface
     sys.stdout.flush()
+    packetCounter = 0
 
     # receive from h1 (packet1)
     # receive from h2 (packet2)
@@ -264,6 +266,7 @@ def main():
 
             sniff1.start()
             sniff2.start()
+            packetCounter += 2
 
             sniff1.join()
             sniff2.join()
@@ -286,29 +289,13 @@ def main():
                 print 'packet1 is sent!!'
                 sendBack(packet2)
                 print 'packet2 is sent!!'
+                packetCounter += 2
 
-                # # make sure the both got right candidatePort
-                # packet1[p2pEst].othersidePort = table[ packet1[p2pEst].whoAmI ][1][ packet1[p2pEst].whom2Connect ]
-                # packet2[p2pEst].othersidePort = table[ packet2[p2pEst].whoAmI ][1][ packet2[p2pEst].whom2Connect ]
+                with open('/home/p4/Desktop/p4-nat/test/method1_log/%s_method1.log' % server, 'a') as f:
+                    f.write(time.ctime(time.time()) + ' ' + str(packetCounter) + '\n')
+                    f.write('-' * 30 + '\n')
+                    packetCounter = 0
 
-                # # revise packet[Ether] header and send back to host 
-                # if packet1[IP].dst == "140.116.0.3":
-                #     if packet[IP].src == "140.116.0.1":
-                #         packet1[p2pEst].whoAmI = 4
-                #     else:
-                #         packet1[p2pEst].whoAmI = 5
-                    
-                #     packet1[Ether].src = get_if_hwaddr("eth0")
-                #     sendp(packet1, iface="eth0", verbose=False)
-                # else:
-                #     if packet[IP].src == "140.116.0.1":
-                #         packet1[p2pEst].whoAmI = 4
-                #         packet1[Ether].src = get_if_hwaddr("server1-eth1")
-                #         sendp(packet1, iface="server1-eth1", verbose=False)
-                #     elif packet[IP].src == "140.116.0.2":
-                #         packet1[p2pEst].whoAmI = 5
-                #         packet1[Ether].src = get_if_hwaddr("server2-eth1")
-                #         sendp(packet1, iface="server2-eth1", verbose=False)
 
                 # restore infos:
                 for i1 in range(0, 4):

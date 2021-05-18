@@ -31,6 +31,7 @@ connection_counter = 0      # record the index of connection
 resendPort = 0
 param_whoAmI = ''
 param_whom2connect = ''
+packetCounter = 0
 
 # isReceiveCheck_IsWait = False
 # isReceiveCheck_IsNotWait = False
@@ -149,7 +150,7 @@ def swapSenderReceiver(packet):
     return etherLayer
 
 def SendP_threading(HostSrcPortList, randomDstPort):
-    global param_whoAmI, param_whom2connect, isDoneSendP, isDoneSniff, testNATPort, testSrcPort
+    global param_whoAmI, param_whom2connect, isDoneSendP, isDoneSniff, testNATPort, testSrcPort, packetCounter
     print '[ SendP_threading ] isDoneSniff =', isDoneSniff, isDoneSendP
     
     # ORIGINAL CODE
@@ -171,6 +172,7 @@ def SendP_threading(HostSrcPortList, randomDstPort):
                 
                 print '[ SendP_threading ] send second one'
                 sendp(packet, iface='eth0', verbose=False)
+                packetCounter += 1
                 print 'send %dth packet' % i
                 time.sleep(0.02)
             else:
@@ -209,9 +211,10 @@ def Sniff_threading():
 
 def handle_pkt_receive(pkt):
     print '[ handle_pkt_receive ]'
-    global param_whoAmI, isDoneSniff, isWait
+    global param_whoAmI, isDoneSniff, isWait, packetCounter
     if UDP in pkt:
         if pkt[IP].dst == index2addr[int(param_whoAmI[1]) - 1]:
+            packetCounter += 1
             print '[ handle_pkt_receive ] in UDP: TRUE'
 
             # spair time for controller to prolong the TTL of hit table entry
@@ -221,13 +224,14 @@ def handle_pkt_receive(pkt):
                 # TODO: Send back the packet
                 packet = swapSenderReceiver(pkt)
                 sendp(packet, iface='eth0', verbose=False)
+                packetCounter += 1
 
             isDoneSniff = True
     else:
         print '[ handle_pkt_receive ] Not fit, leaving...'
 
 def handle_pkt_query1(pkt):
-    global isDoneSniff, connection_counter, resendPort
+    global isDoneSniff, connection_counter, resendPort, packetCounter
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -251,6 +255,7 @@ def handle_pkt_query1(pkt):
         print '[ handle_pkt_query1 ] Query 2'
         packet2server.show()              
         sendp(packet2server, iface='eth0', verbose=False)
+        packetCounter += 1
 
         print '\n[ handle_pkt_query1 ]', isDoneSniff, '\n'
 
@@ -260,7 +265,8 @@ def handle_pkt_query1(pkt):
 
 def handle_pkt_query2(pkt):
     print '[ handle_pkt_query2 ] processing'
-    global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI, isWait, testNATPort, testSrcPort
+    global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI, \
+           isWait, testNATPort, testSrcPort, packetCounter
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -302,6 +308,7 @@ def handle_pkt_query2(pkt):
                     sendp(packet, iface='eth0', verbose=False)
                     print 'send %dth packet' % i
                     time.sleep(0.02)
+                    packetCounter += 1
 
                 # FIXME: TEST code
                 # for i in range(0, 1):
@@ -381,7 +388,10 @@ def buildpacket(whoAmI, whom2connect, dstAddr, sp, dp, Q1packet=None, isTEST=Fal
     return pkt
 
 def main():
-    global resendPort, isDoneSniff, param_whom2connect, param_whoAmI, isWait
+    global resendPort, isDoneSniff, param_whom2connect, param_whoAmI, isWait, packetCounter
+
+
+    start = time.time()
 
     if len(sys.argv) < 3:
         print 'pass 2 arguments: <whoAmI> <whom to connect>'
@@ -402,6 +412,7 @@ def main():
                                  dstAddr='140.116.0.1', sp='11111', dp=Host2ServerPort[param_whoAmI])
     packet2server.show()
     sendp(packet2server, iface='eth0', verbose=False)
+    packetCounter += 1
 
     print '[ Main ] Sniff 1'
     # sniff from server1
@@ -437,6 +448,22 @@ def main():
     else:
         print 'Connection Fail!!!'
 
+    # log
+    log = open('/home/p4/Desktop/p4-nat/test/method2_log/host_%s.log' % param_whoAmI, 'a')
+    log.write(time.ctime(time.time()) + '\n')
+
+    if isDoneSniff:
+        log.write('Connection Succeed\n')
+    else:
+        log.write('Connection Fail\n')
+    
+    end = time.time()
+    
+    log.write('Start = ' + time.ctime(start) + '\n')
+    log.write('End = ' + time.ctime(end) + '\n')
+    log.write('Elapsed Time = %f\n' % (end-start))
+    log.write('Packet = %d\n' % packetCounter)
+    log.write('-' * 30 + '\n')
 
 if __name__ == '__main__':
     main()

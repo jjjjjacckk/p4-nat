@@ -202,13 +202,14 @@ Index_PacketFromClient = 0
 Index_PacketFromServer = 1
 packet2Bsent2eth0 = Packet()
 packet2Bsent2eth1 = Packet()
-
+packetCounter = 0
 
 def handle_pkt_eth0(pkt):
-    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packet2Bsent2eth1
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packet2Bsent2eth1, packetCounter
 
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
+        packetCounter += 1
         if p2pEst not in pkt:
             # if len(pkt[Raw].load) >= 28:
             if pkt[Raw].load.find('who=') != -1:
@@ -237,6 +238,7 @@ def handle_pkt_eth0(pkt):
                     time.sleep(1)
                     
                     sendp(pkt, iface='server2-eth1', verbose=False)
+                    packetCounter += 1
                     packet2Bsent2eth1 = Packet()
 
                 isDoneSniff_eth0 = True
@@ -253,10 +255,11 @@ def handle_pkt_eth0(pkt):
         pkt.show2()
 
 def handle_pkt_server2_eth1(pkt):
-    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packet2Bsent2eth0
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packet2Bsent2eth0, packetCounter
 
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
+        packetCounter += 1
         if p2pEst not in pkt:
             print '[ handle_pkt_server2_eth1 ] pkt[Raw].load.find("who=") != -1', pkt[Raw].load.find('who=')
             if pkt[Raw].load.find('who=') != -1:
@@ -288,6 +291,7 @@ def handle_pkt_server2_eth1(pkt):
                     time.sleep(1)
                     
                     sendp(pkt, iface='eth0', verbose=False)
+                    packetCounter += 1
                     packet2Bsent2eth0 = Packet()
 
                 isDoneSniff_server_eth1 = True
@@ -313,6 +317,7 @@ def getIsDoneSniff_server_eth1(x):
     return isDoneSniff_server_eth1
 
 def sendBack(packet):
+    global packetCounter
     # make sure the both got right candidatePort
     print '[ Send Back ]', packet[p2pEst].whoAmI, packet[p2pEst].whom2Connect
     sender_in = num2host[packet[p2pEst].whoAmI]
@@ -341,6 +346,7 @@ def sendBack(packet):
             packet[p2pEst].whoAmI = 5
             packet[Ether].src = get_if_hwaddr("server2-eth1")
             sendp(packet, iface="server2-eth1", verbose=False)
+    packetCounter += 1
 
 def FromSrcPort2DstPort(port):
     if table['h1']['server2port'] == port:
@@ -400,7 +406,7 @@ def updateRaw(packet, port):
     return packet
 
 def main():
-    global extractedP2P, packet2Bsent2eth0, packet2Bsent2eth1, isDoneSniff_eth0, isDoneSniff_server_eth1
+    global extractedP2P, packet2Bsent2eth0, packet2Bsent2eth1, isDoneSniff_eth0, isDoneSniff_server_eth1, packetCounter
     #ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     #iface = ifaces[0]
     # iface = sys.argv[1]
@@ -454,6 +460,7 @@ def main():
                 print '[ AAAAAA ]'
                 packet2Bsent2eth0.show()
                 sendp(packet2Bsent2eth0, iface='eth0', verbose=False)
+                packetCounter += 1
                 packet2Bsent2eth0 = Packet()
             else:
                 packet2Bsent2eth0 = Packet()
@@ -472,9 +479,16 @@ def main():
                 print '[ BBBBBB ]'
                 packet2Bsent2eth1.show()
                 sendp(packet2Bsent2eth1, iface='server2-eth1', verbose=False)
+                packetCounter += 1
                 packet2Bsent2eth1 = Packet()
             else:
                 packet2Bsent2eth1 = Packet()
+
+
+            with open('/home/p4/Desktop/p4-nat/test/method2_log/server2_method2.log', 'a') as f:
+                f.write(time.ctime(time.time()) + ' ' + str(packetCounter) + '\n')
+                f.write('-' * 30 + '\n')
+                packetCounter = 0
 
             isDoneSniff_eth0 = False
             isDoneSniff_server_eth1 = False

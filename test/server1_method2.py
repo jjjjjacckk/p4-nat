@@ -19,6 +19,8 @@ table = {'h1':['140.116.0.3', {'h2': -1, 'h3': -1, 'h4': -1}],
          'h3':['140.116.0.4', {'h1': -1, 'h2': -1, 'h4': -1}], 
          'h4':['140.116.0.4', {'h1': -1, 'h2': -1, 'h3': -1}]}
 
+packetCounter = 0
+
 class p2pEst(Packet):
     name = 'p2pEst'
     fields_desc = [
@@ -171,13 +173,12 @@ def handle_pkt_test(pkt):
             # send info to server
             packet = Ether(get_if_hwaddr('eth0'),)
 
-
-
 def handle_pkt_eth0(pkt):
-    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packetCounter
 
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
+        packetCounter += 1
         if p2pEst not in pkt:
             print "got a packet"
             print '[ Before ]'
@@ -199,6 +200,7 @@ def handle_pkt_eth0(pkt):
             time.sleep(1)
 
             sendp(pkt, iface='eth0', verbose=False)
+            packetCounter += 1
 
             isDoneSniff_eth0 = True
 
@@ -210,10 +212,11 @@ def handle_pkt_eth0(pkt):
         pkt.show2()
 
 def handle_pkt_server1_eth1(pkt):
-    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packetCounter
 
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt :
+        packetCounter += 1
         if p2pEst not in pkt:
 
             print "got a packet"
@@ -235,6 +238,7 @@ def handle_pkt_server1_eth1(pkt):
             time.sleep(1)
 
             sendp(pkt, iface='server1-eth1', verbose=False)
+            packetCounter += 1
             isDoneSniff_server_eth1 = True
 
             # hexdump(pkt)
@@ -254,6 +258,7 @@ def getIsDoneSniff_server_eth1(x):
     return isDoneSniff_server_eth1
 
 def sendBack(packet):
+    global packetCounter
     # make sure the both got right candidatePort
     print '[ Send Back ]', packet[p2pEst].whoAmI, packet[p2pEst].whom2Connect
     sender_in = num2host[packet[p2pEst].whoAmI]
@@ -282,9 +287,10 @@ def sendBack(packet):
             packet[p2pEst].whoAmI = 5
             packet[Ether].src = get_if_hwaddr("server2-eth1")
             sendp(packet, iface="server2-eth1", verbose=False)
+    packetCounter += 1
 
 def main():
-    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1
+    global extractedP2P, isDoneSniff_eth0, isDoneSniff_server_eth1, packetCounter
     #ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     #iface = ifaces[0]
     # iface = sys.argv[1]
@@ -311,6 +317,11 @@ def main():
 
             sniff1.join()
             sniff2.join()
+
+            with open('/home/p4/Desktop/p4-nat/test/method2_log/server1_method2.log', 'a') as f:
+                f.write(time.ctime(time.time()) + ' ' + str(packetCounter) + '\n')
+                f.write('-' * 30 + '\n')
+                packetCounter = 0
 
             isDoneSniff_server_eth1 = isDoneSniff_eth0 = False
 

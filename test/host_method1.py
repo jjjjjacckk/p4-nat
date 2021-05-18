@@ -26,7 +26,8 @@ connection_counter = 0      # record the index of connection
 
 resendPort = 0
 whom2connect = ''
-whomAmI = ''
+whoAmI = ''
+packetCounter = 0
 
 
 '''
@@ -116,8 +117,9 @@ def getIsDoneSniff_RecTest(x):
     return isDoneSniff_RecTest
 
 def handle_pkt(pkt):
-    global isDoneSniff, connection_counter, resendPort, whom2connect, whomAmI
+    global isDoneSniff, connection_counter, resendPort, whom2connect, whoAmI, packetCounter
     # if TCP in pkt and pkt[TCP].dport == 1234:
+    packetCounter += 1
     if UDP in pkt:
         print "got a packet"
         pkt.show()
@@ -148,13 +150,15 @@ def handle_pkt(pkt):
             # Sending Testing Packets
             # host with smaller index send tset packet first, and then sniff respond packet
             # host with greater index sniff respond packet first, and then send test packet 
-            if int(whomAmI[1]) < int(whom2connect[1]):
+            if int(whoAmI[1]) < int(whom2connect[1]):
                 time.sleep(1)       # wait the otherside to start "sniff()"
 
                 sendp_thread = threading.Thread(target=sendp, kwargs=dict(x=new_pkt, iface='eth0', verbose=False))
+                packetCounter += 1
                 sniff_thread = threading.Thread(target=sniff, kwargs=dict(iface='eth0',
                                                                           prn=handle_pkt_rec_test,
-                                                                          stop_filter=getIsDoneSniff_RecTest))
+                                                                          stop_filter=getIsDoneSniff_RecTest,
+                                                                          timeout=5))
 
                 sendp_thread.start()
                 sniff_thread.start()
@@ -170,10 +174,11 @@ def handle_pkt(pkt):
                 # sniff(iface='eth0', prn=handle_pkt_rec_test, stop_filter=getIsDoneSniff_RecTest)
             else:
                 print '[ HOST ] greater: receiving...'
-                sniff(iface='eth0', prn=handle_pkt_rec_test, stop_filter=getIsDoneSniff_RecTest)
+                sniff(iface='eth0', prn=handle_pkt_rec_test, stop_filter=getIsDoneSniff_RecTest, timeout=5)
                 time.sleep(1)
                 print '[ HOST ] greater: sending...'
                 sendp(new_pkt, iface='eth0', verbose=False)
+                packetCounter += 1
 
         sys.stdout.flush()
         isDoneSniff = True
@@ -181,7 +186,8 @@ def handle_pkt(pkt):
         pkt.show2()
 
 def handle_pkt_rec_test(pkt):
-    global isDoneSniff_RecTest, connection_counter, resendPort, whom2connect, whomAmI
+    global isDoneSniff_RecTest, connection_counter, resendPort, whom2connect, whoAmI, packetCounter
+    packetCounter += 1
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "got a packet"
@@ -212,9 +218,11 @@ def handle_pkt_rec_test(pkt):
     elif ICMP in pkt:
         pkt.show2()
 
-
 def main():
-    global resendPort, whom2connect, isDoneSniff, whomAmI
+    global resendPort, whom2connect, isDoneSniff, whoAmI, isDoneSniff_RecTest, packetCounter
+
+    start = time.time()
+
 
     if len(sys.argv) < 5:
         print 'pass 4 arguments: <server> <whoAmI> <whom2connect> <resentPort>'
@@ -234,7 +242,7 @@ def main():
         sys.exit(1)
 
     # dp
-    whomAmI = sys.argv[2]
+    whoAmI = sys.argv[2]
     if sys.argv[2] == 'h1':
         dp = 1111
     elif sys.argv[2] == 'h2':
@@ -268,14 +276,28 @@ def main():
     pkt.show()
     print '[ HOST: packet to be sent out! ] END! (establish connection)\n'
     sendp(pkt, iface="eth0", verbose=False)
+    packetCounter += 1
 
-    # TODO: I think the "If statement" is useless
-    # if p2pEst in pkt:
-    #     if pkt[p2pEst].isEstPacket:
-    #         print 'pkt[p2pEst].isEstPacket = ', pkt[p2pEst].isEstPacket
-    #         print "sniffing on %s" % 'eth0'
-    #         sniff(iface='eth0', prn=handle_pkt, stop_filter=getIsDoneSniff)
     sniff(iface='eth0', prn=handle_pkt, stop_filter=getIsDoneSniff)
+
+    # log
+    log = open('/home/p4/Desktop/p4-nat/test/method1_log/host_%s.log' % whoAmI, 'a')
+    log.write(time.ctime(time.time()) + '\n')
+
+    if isDoneSniff_RecTest:
+        log.write('Connection Succeed\n')
+    else:
+        log.write('Connection Fail\n')
+    
+    end = time.time()
+    
+    log.write('Start = ' + time.ctime(start) + '\n')
+    log.write('End = ' + time.ctime(end) + '\n')
+    log.write('Elapsed Time = %f\n' % (end-start))
+    log.write('Packet = %d\n' % packetCounter)
+    log.write('-' * 30 + '\n')
+
+
 
 if __name__ == '__main__':
     main()
