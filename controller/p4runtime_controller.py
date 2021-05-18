@@ -28,8 +28,11 @@ seq_last_index_2 = 4
 counter_nat1_PortUsage = 0
 counter_nat2_PortUsage = 0
 timing_counter = 1              # <- temp use
+global_method = ''
 
 NewNATEntryMapping = {}
+nat1_log = ''
+nat2_log = ''
 
 timing = []
 
@@ -426,7 +429,8 @@ def buildNATEntryMappingKey(othersideIP, hostIP, othersidePort, hostPort):
     return 'othersideIP=%s;hostIP=%s;othersidePort=%d;hostPort=%d' % (othersideIP, hostIP, othersidePort, hostPort)
 
 def digest_threading1(nat, p4info_helper):
-    global digests_nat1, counter_nat1_PortUsage, timing_counter, seq_nat_1, seq_last_index_1, timing, testNATPort, test_counter_1
+    global digests_nat1, counter_nat1_PortUsage, timing_counter, seq_nat_1, seq_last_index_1, \
+           timing, testNATPort, test_counter_1, global_method, nat1_log
 
     try:
         print '[ digest_threading1 ] in digest threading'
@@ -445,6 +449,7 @@ def digest_threading1(nat, p4info_helper):
             # print "===============================" 
         
             if digest_name == 'CandidatePortDigest':
+                nat1_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_CandidatePortDigest' + '\n')
                 for members in digest.data:
                     #print members
                     if members.WhichOneof('data')=='struct':
@@ -490,6 +495,7 @@ def digest_threading1(nat, p4info_helper):
                         # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, NATIP, candidatePort)
             elif digest_name == 'AddNewNATEntry':
                 timing_counter += 1
+                nat1_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_AddNewNATEntry' + '\n')
                 for members in digest.data:
                     #print members
                     if members.WhichOneof('data')=='struct':
@@ -533,46 +539,51 @@ def digest_threading1(nat, p4info_helper):
                             f.write(str(ele) + '\n')
                     timing = []
             elif digest_name == 'Method2Hit':
-                for members in digest.data:
-                    #print members
-                    if members.WhichOneof('data')=='struct':
-                        if members.struct.members[0].WhichOneof('data') == 'bitstring':
-                            othersideIP = prettify(members.struct.members[0].bitstring)
-                        if members.struct.members[1].WhichOneof('data') == 'bitstring':
-                            hostIP = prettify(members.struct.members[1].bitstring)
-                        if members.struct.members[2].WhichOneof('data') == 'bitstring':
-                            othersidePort = int_prettify(members.struct.members[2].bitstring)
-                        if members.struct.members[3].WhichOneof('data') == 'bitstring':
-                            hostPort = int_prettify(members.struct.members[3].bitstring)
-                
-                    print '[ Method2Hit ]', othersideIP, othersidePort, hostIP, hostPort
+                nat1_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_Method2Hit' + '\n')
+                # prolong TTL
+                if global_method == 'method2':
+                    # only method 2 needs to deal with this 
+                    for members in digest.data:
+                        #print members
+                        if members.WhichOneof('data')=='struct':
+                            if members.struct.members[0].WhichOneof('data') == 'bitstring':
+                                othersideIP = prettify(members.struct.members[0].bitstring)
+                            if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                                hostIP = prettify(members.struct.members[1].bitstring)
+                            if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                                othersidePort = int_prettify(members.struct.members[2].bitstring)
+                            if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                                hostPort = int_prettify(members.struct.members[3].bitstring)
+                    
+                        print '[ Method2Hit ]', othersideIP, othersidePort, hostIP, hostPort
 
-                    # get candidate port
-                    key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
-                    returnNATPort = NewNATEntryMapping.get(key)
+                        # get candidate port
+                        key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
+                        returnNATPort = NewNATEntryMapping.get(key)
 
-                    # checking
-                    print '[ Method2Hit ] returnNATPort =', returnNATPort
+                        # checking
+                        print '[ Method2Hit ] returnNATPort =', returnNATPort
 
 
-                    if returnNATPort is not None:
-                        # delete old NAT Table Entry with TTL
-                        delete_match_egress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
-                        delete_match_egress_nat_ip_method2(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
-                        delete_match_ingress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, NATPort=returnNATPort)
+                        if returnNATPort is not None:
+                            # delete old NAT Table Entry with TTL
+                            delete_match_egress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
+                            delete_match_egress_nat_ip_method2(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
+                            delete_match_ingress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, NATPort=returnNATPort)
 
-                        # add New NAT Table Entry
-                        set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=returnNATPort, hostIP=hostIP, hostPort=hostPort)
-                        set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=returnNATPort)
-                        set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=returnNATPort)
-                    else:
-                        print '[ Method2Hit 1 ] NewNATEntryMapping = ', NewNATEntryMapping
-                        print '[ Method2Hit 1 ] Error occur when prolong the TTL'
-                        print '[ Method2Hit 1 ] probably, it is becuase the table entry has already been deleted'
-                        print '[ Method2Hit 1 ] aborting the program....'
-                        sys.exit(1)
+                            # add New NAT Table Entry
+                            set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=returnNATPort, hostIP=hostIP, hostPort=hostPort)
+                            set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=returnNATPort)
+                            set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=returnNATPort)
+                        else:
+                            print '[ Method2Hit 1 ] NewNATEntryMapping = ', NewNATEntryMapping
+                            print '[ Method2Hit 1 ] Error occur when prolong the TTL'
+                            print '[ Method2Hit 1 ] probably, it is becuase the table entry has already been deleted'
+                            print '[ Method2Hit 1 ] aborting the program....'
+                            sys.exit(1)
         
         elif digests_nat1.WhichOneof('update') == 'idle_timeout_notification':
+            nat1_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_idle_timeout_notification' + '\n')
             # print '[ Another than Digest ]', digests_nat1
             temp = digests_nat1.idle_timeout_notification
             # print '[ Another than Digest ]', temp
@@ -621,7 +632,8 @@ def digest_threading1_loop(nat, p4info_helper):
         return 
     
 def digest_threading2(nat, p4info_helper):
-    global  digests_nat2, counter_nat2_PortUsage, seq_nat_2, seq_last_index_2, testNATPort, test_counter_2
+    global  digests_nat2, counter_nat2_PortUsage, seq_nat_2, seq_last_index_2, \
+            testNATPort, test_counter_2, global_method, nat2_log
 
     try:
         print '[ digest_threading2 ] in digest threading'
@@ -640,6 +652,7 @@ def digest_threading2(nat, p4info_helper):
             print '[ digest_threading2 ] digest_name = ', digest_name
 
             if digest_name == 'CandidatePortDigest':
+                nat2_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_CandidatePortDigest' + '\n')
                 for members in digest.data:
                     #print members
                     if members.WhichOneof('data')=='struct':
@@ -685,6 +698,7 @@ def digest_threading2(nat, p4info_helper):
                         # set_match_ingress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, hostIP, hostPort)
                         # set_match_egress_nat_ip(p4info_helper, nat2, othersideIP, othersidePort, NATIP, candidatePort)
             elif digest_name == 'AddNewNATEntry':
+                nat2_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_AddNewNATEntry' + '\n')
                 for members in digest.data:
                     #print members
                     if members.WhichOneof('data')=='struct':
@@ -720,41 +734,47 @@ def digest_threading2(nat, p4info_helper):
 
                     # test_counter_2 += 1
             elif digest_name == 'Method2Hit':
-                for members in digest.data:
-                    #print members
-                    if members.WhichOneof('data')=='struct':
-                        if members.struct.members[0].WhichOneof('data') == 'bitstring':
-                            othersideIP = prettify(members.struct.members[0].bitstring)
-                        if members.struct.members[1].WhichOneof('data') == 'bitstring':
-                            hostIP = prettify(members.struct.members[1].bitstring)
-                        if members.struct.members[2].WhichOneof('data') == 'bitstring':
-                            othersidePort = int_prettify(members.struct.members[2].bitstring)
-                        if members.struct.members[3].WhichOneof('data') == 'bitstring':
-                            hostPort = int_prettify(members.struct.members[3].bitstring)
-                
-                    print '[ Method2Hit ]', othersideIP, othersidePort, hostIP, hostPort
+                nat2_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_Method2Hit' + '\n')
+                # prolong TTL
+                if global_method == 'method2':
+                    # only method 2 needs to deal with this 
+                    for members in digest.data:
+                        #print members
+                        if members.WhichOneof('data')=='struct':
+                            if members.struct.members[0].WhichOneof('data') == 'bitstring':
+                                othersideIP = prettify(members.struct.members[0].bitstring)
+                            if members.struct.members[1].WhichOneof('data') == 'bitstring':
+                                hostIP = prettify(members.struct.members[1].bitstring)
+                            if members.struct.members[2].WhichOneof('data') == 'bitstring':
+                                othersidePort = int_prettify(members.struct.members[2].bitstring)
+                            if members.struct.members[3].WhichOneof('data') == 'bitstring':
+                                hostPort = int_prettify(members.struct.members[3].bitstring)
+                    
+                        print '[ Method2Hit ]', othersideIP, othersidePort, hostIP, hostPort
 
-                    # get candidate port
-                    key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
-                    returnNATPort = NewNATEntryMapping.get(key)
+                        # get candidate port
+                        key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
+                        returnNATPort = NewNATEntryMapping.get(key)
 
-                    if returnNATPort is not None:
-                        # delete old NAT Table Entry with TTL
-                        delete_match_egress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
-                        delete_match_egress_nat_ip_method2(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
-                        delete_match_ingress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, NATPort=returnNATPort)
+                        if returnNATPort is not None:
+                            # delete old NAT Table Entry with TTL
+                            delete_match_egress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
+                            delete_match_egress_nat_ip_method2(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, srcIP=hostIP, srcPort=hostPort)
+                            delete_match_ingress_nat_ip(p4info_helper=p4info_helper, nat=nat, othersideIP=othersideIP, othersidePort=othersidePort, NATPort=returnNATPort)
 
-                        # add New NAT Table Entry
-                        set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=returnNATPort, hostIP=hostIP, hostPort=hostPort)
-                        set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=returnNATPort)
-                        set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=returnNATPort)
-                    else:
-                        print '[ Method2Hit 2 ] NewNATEntryMapping = ', NewNATEntryMapping
-                        print '[ Method2Hit 2 ] Error occur when prolong the TTL'
-                        print '[ Method2Hit 2 ] probably, it is becuase the table entry has already been deleted'
-                        print '[ Method2Hit 2 ] aborting the program....'
-                        exit(1)
+                            # add New NAT Table Entry
+                            set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=returnNATPort, hostIP=hostIP, hostPort=hostPort)
+                            set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=returnNATPort)
+                            set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=returnNATPort)
+                        else:
+                            print '[ Method2Hit 2 ] NewNATEntryMapping = ', NewNATEntryMapping
+                            print '[ Method2Hit 2 ] Error occur when prolong the TTL'
+                            print '[ Method2Hit 2 ] probably, it is becuase the table entry has already been deleted'
+                            print '[ Method2Hit 2 ] aborting the program....'
+                            exit(1)
+            
         elif digests_nat2.WhichOneof('update') == 'idle_timeout_notification':
+            nat2_log.write(time.ctime(time.time()) + ' ' + global_method + ' Digest_idle_timeout_notification' + '\n')
             # print '[ Another than Digest ]', digests_nat2
             temp = digests_nat2.idle_timeout_notification
             # print '[ Another than Digest ]', temp
@@ -875,16 +895,31 @@ def delete_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersid
     )
     nat.DeleteTableEntry(table_entry)
 
+def configLog(method):
+    global nat1_log, nat2_log
+    log_path = '/home/p4/Desktop/p4-nat/controller/controllerLog'
+
+    log1_path = os.path.join(log_path, 'nat1_log_%s.log' % method)
+    log2_path = os.path.join(log_path, 'nat2_log_%s.log' % method)
+    nat1_log = open(log1_path, 'a')
+    nat2_log = open(log2_path, 'a')
+
+def closeLog():
+    global nat1_log, nat2_log
+    nat1_log.close()
+    nat2_log.close()
+
 def main(p4info_file_path, bmv2_file_path, method):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
     print '[ main ] p4info_helper = ', p4info_helper
 
     # Generate source port sequence
-    global seq_nat_1, seq_nat_2, seq_last_index_1, seq_last_index_2, counter_nat1_PortUsage, counter_nat2_PortUsage, timing_counter
-    global timing
+    global seq_nat_1, seq_nat_2, seq_last_index_1, seq_last_index_2, counter_nat1_PortUsage, counter_nat2_PortUsage, timing_counter, global_method
+    global timing, nat1_log, nat2_log
     seq_nat_1 = random.sample(range(0, 65536), 65536)
     seq_nat_2 = random.sample(range(0, 65536), 65536)
+    global_method = method
 
     try:
         # Create a switch connection object for nat1 and s2;
@@ -922,6 +957,7 @@ def main(p4info_file_path, bmv2_file_path, method):
 
         if method == 'method1':
             WriteBasicRule(p4info_helper, nat1, nat2, True)
+            configLog(method)
 
             while True:
                 thread1 = threading.Thread(target=digest_threading1, args=(nat1, p4info_helper))
@@ -952,6 +988,7 @@ def main(p4info_file_path, bmv2_file_path, method):
 
         elif method == 'method2':
             WriteBasicRule(p4info_helper, nat1, nat2, False)
+            configLog(method)
 
             thread1 = threading.Thread(target=digest_threading1_loop, args=(nat1, p4info_helper))
             thread2 = threading.Thread(target=digest_threading2_loop, args=(nat2, p4info_helper))
@@ -1246,6 +1283,7 @@ def main(p4info_file_path, bmv2_file_path, method):
     except grpc.RpcError as e:
         printGrpcError(e)
     
+    closeLog()
     ShutdownAllSwitchConnections()
 
 
