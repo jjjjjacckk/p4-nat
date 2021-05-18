@@ -233,28 +233,28 @@ def main():
 
     while True:
         if len(sys.argv) < 2:
-            print 'pass 1 arguments: "<nat>"\n"<nat>" = "nat1" or "nat2"'
+            print 'pass 1 arguments: "<server>"\n"<server>" = "server1" or "server2"'
             exit(1)
         else:
             server = sys.argv[1]
-            if server != 'nat1' and server != 'nat2':
-                print 'specify "nat1" or "nat2" !'
-                exit(1)
+            if server != 'server1' and server != 'server2':
+                print 'specify "server1" or "server2" !'
+                sys.exit(1)
             else:
                 break
     
     try:
         while True:
-            print 'NAT starts successfully!'
+            print 'server starts successfully!'
 
-            if server == 'nat1':
+            if server == 'server1':
                 sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
                                                                     prn = handle_pkt,
                                                                     stop_filter = getIsDoneSniff_eth0))
                 sniff2 = threading.Thread(target=sniff, kwargs=dict(iface = "server1-eth1",
                                                                     prn = handle_pkt,
                                                                     stop_filter = getIsDoneSniff_server1_eth1))
-            elif server == 'nat2':
+            elif server == 'server2':
                 sniff1 = threading.Thread(target=sniff, kwargs=dict(iface = "eth0",
                                                                     prn = handle_pkt,
                                                                     stop_filter = getIsDoneSniff_eth0))

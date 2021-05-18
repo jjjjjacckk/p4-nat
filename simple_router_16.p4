@@ -498,7 +498,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             if (hdr.udp.isValid()) {
                 // for method 1
                 if (match_ingress_nat_ip.apply().hit == false) {
-                    if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 4w1 ) {
+                    if (hdr.p2pEst.isValid() && hdr.p2pEst.isEstPacket == 4w1) {
                         // if the packet is from the server and not recognized by NAT
                         // , mark the packet as drop
                         if (hdr.p2pEst.direction == 1w1) 
