@@ -1,0 +1,91 @@
+Tue May 18 19:03:48 2021
+Connection Succeed
+Start = Tue May 18 19:03:34 2021
+End = Tue May 18 19:03:48 2021
+Elapsed Time = 13.163142
+Packet = 4
+------------------------------
+Tue May 18 19:03:52 2021
+Connection Succeed
+Start = Tue May 18 19:03:48 2021
+End = Tue May 18 19:03:52 2021
+Elapsed Time = 4.278634
+Packet = 5
+------------------------------
+Tue May 18 19:04:00 2021
+Connection Fail
+Start = Tue May 18 19:03:52 2021
+End = Tue May 18 19:04:00 2021
+Elapsed Time = 8.215135
+Packet = 2
+------------------------------
+Tue May 18 19:04:05 2021
+Connection Succeed
+Start = Tue May 18 19:04:01 2021
+End = Tue May 18 19:04:05 2021
+Elapsed Time = 4.298411
+Packet = 5
+------------------------------
+Tue May 18 19:04:09 2021
+Connection Succeed
+Start = Tue May 18 19:04:05 2021
+End = Tue May 18 19:04:09 2021
+Elapsed Time = 4.219655
+Packet = 4
+------------------------------
+Tue May 18 19:04:13 2021
+Connection Succeed
+Start = Tue May 18 19:04:09 2021
+End = Tue May 18 19:04:13 2021
+Elapsed Time = 4.213985
+Packet = 4
+------------------------------
+Tue May 18 19:04:18 2021
+Connection Succeed
+Start = Tue May 18 19:04:14 2021
+End = Tue May 18 19:04:18 2021
+Elapsed Time = 4.214219
+Packet = 4
+------------------------------
+Tue May 18 19:04:22 2021
+Connection Succeed
+Start = Tue May 18 19:04:18 2021
+End = Tue May 18 19:04:22 2021
+Elapsed Time = 4.257468
+Packet = 5
+------------------------------
+Tue May 18 19:04:27 2021
+Connection Succeed
+Start = Tue May 18 19:04:22 2021
+End = Tue May 18 19:04:27 2021
+Elapsed Time = 4.199998
+Packet = 4
+------------------------------
+Tue May 18 19:04:31 2021
+Connection Succeed
+Start = Tue May 18 19:04:27 2021
+End = Tue May 18 19:04:31 2021
+Elapsed Time = 4.255198
+Packet = 5
+------------------------------
+Wed May 19 09:01:03 2021
+Connection Succeed
+Start = Wed May 19 09:00:59 2021
+End = Wed May 19 09:01:03 2021
+Elapsed Time = 4.620262
+Packet = 5
+------------------------------
+Wed May 19 09:06:09 2021
+Connection Fail
+Start = Wed May 19 09:05:57 2021
+End = Wed May 19 09:06:09 2021
+Elapsed Time = 12.831448
+Packet = 1
+------------------------------
+Wed May 19 09:06:59 2021
+Connection Succeed
+Start = Wed May 19 09:06:54 2021
+End = Wed May 19 09:06:59 2021
+Elapsed Time = 5.181380
+Packet = 4
+------------------------------

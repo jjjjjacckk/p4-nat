@@ -64,9 +64,9 @@ def reformP2PEst(packetRawLoad):
     p2pRaw = []
     for index in range(0, 18):
         p2pRaw.append(ord(packetRawLoad[index]))
-    print '[ reformP2PEst ] ', repr(packetRawLoad)
-    print '[ reformP2PEst ] ', p2pRaw, type(p2pRaw), len(p2pRaw), isinstance(p2pRaw, list)
-    print '[ reformP2PEst ] ', len(packetRawLoad[18:]), ' | ', ord(packetRawLoad[18]), ' | ', packetRawLoad[19]
+    # print '[ reformP2PEst ] ', repr(packetRawLoad)
+    # print '[ reformP2PEst ] ', p2pRaw, type(p2pRaw), len(p2pRaw), isinstance(p2pRaw, list)
+    # print '[ reformP2PEst ] ', len(packetRawLoad[18:]), ' | ', ord(packetRawLoad[18]), ' | ', packetRawLoad[19]
     if isinstance(p2pRaw, list) and len(p2pRaw) == 18:
         param_p2pOthersideIP = '%d.%d.%d.%d' % (p2pRaw[0], p2pRaw[1], p2pRaw[2], p2pRaw[3])
         param_p2pOthersidePort = p2pRaw[4]*256 + p2pRaw[5]
@@ -118,9 +118,9 @@ def ReformSplitMSG(packet):
     return packet
 
 def swapSenderReceiver(packet, iface):
-    print '[ swapSenderReceiver ]'
-    packet.show()
-    print packet[UDP].sport, packet[UDP].dport
+    # print '[ swapSenderReceiver ]'
+    # packet.show()
+    # print packet[UDP].sport, packet[UDP].dport
 
     etherLayer = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
     new_IP = IP(src=packet[IP].dst, dst=packet[IP].src)
@@ -130,8 +130,8 @@ def swapSenderReceiver(packet, iface):
     etherLayer.remove_payload()
     etherLayer = etherLayer / new_IP / new_UDP / msg
     
-    print '[ swapSenderReceiver ]'
-    etherLayer.show()
+    # print '[ swapSenderReceiver ]'
+    # etherLayer.show()
 
 
     return etherLayer
@@ -180,25 +180,26 @@ def handle_pkt_eth0(pkt):
     if UDP in pkt :
         packetCounter += 1
         if p2pEst not in pkt:
-            print "got a packet"
-            print '[ Before ]'
-            pkt.show()
-            print pkt[UDP].sport, pkt[UDP].dport
+            print "[ handle_pkt_eth0 ] got a packet"
+            # print '[ Before ]'
+            # pkt.show()
+            # print pkt[UDP].sport, pkt[UDP].dport
 
 
-            print '[ After ]'
+            # print '[ After ]'
             pkt = ReformSplitMSG(pkt)
-            pkt.show()
-            print pkt[UDP].sport, pkt[UDP].dport
+            # pkt.show()
+            # print pkt[UDP].sport, pkt[UDP].dport
 
 
             # # send back to host
             pkt = swapSenderReceiver(pkt, 'eth0')
-            print '[ After2 ]'
-            pkt.show()
+            # print '[ After2 ]'
+            # pkt.show()
 
             time.sleep(1)
 
+            print '[ handle_pkt_eth0 ] send info back to eth0'
             sendp(pkt, iface='eth0', verbose=False)
             packetCounter += 1
 
@@ -219,24 +220,25 @@ def handle_pkt_server1_eth1(pkt):
         packetCounter += 1
         if p2pEst not in pkt:
 
-            print "got a packet"
-            print '[ Before ]'
-            pkt.show()
-            print pkt[UDP].sport, pkt[UDP].dport
+            print "[ handle_pkt_server1_eth1 ] got a packet"
+            # print '[ Before ]'
+            # pkt.show()
+            # print pkt[UDP].sport, pkt[UDP].dport
 
-            print '[ After ]'
+            # print '[ After ]'
             pkt = ReformSplitMSG(pkt)
-            pkt.show()
-            print pkt[UDP].sport, pkt[UDP].dport
+            # pkt.show()
+            # print pkt[UDP].sport, pkt[UDP].dport
 
 
             # # send back to host
             pkt = swapSenderReceiver(pkt, 'server1-eth1')
-            print '[ After2 ]'
-            pkt.show()
+            # print '[ After2 ]'
+            # pkt.show()
 
             time.sleep(1)
 
+            print '[ handle_pkt_server1_eth1 ] send info back to server1_eth1'
             sendp(pkt, iface='server1-eth1', verbose=False)
             packetCounter += 1
             isDoneSniff_server_eth1 = True
@@ -260,14 +262,14 @@ def getIsDoneSniff_server_eth1(x):
 def sendBack(packet):
     global packetCounter
     # make sure the both got right candidatePort
-    print '[ Send Back ]', packet[p2pEst].whoAmI, packet[p2pEst].whom2Connect
+    # print '[ Send Back ]', packet[p2pEst].whoAmI, packet[p2pEst].whom2Connect
     sender_in = num2host[packet[p2pEst].whoAmI]
     receiver_in = num2host[packet[p2pEst].whom2Connect]
-    print '[ Send Back ]', table[ sender_in ][1][ receiver_in ]
+    # print '[ Send Back ]', table[ sender_in ][1][ receiver_in ]
     packet[p2pEst].p2pOthersidePort = table[ receiver_in ][1][ sender_in ]
-    print '[ Send Back ]'
-    packet.show()
-    print '\n'
+    # print '[ Send Back ]'
+    # packet.show()
+    # print '\n'
 
     # revise packet[Ether] header and send back to host 
     if packet[IP].dst == "140.116.0.3":

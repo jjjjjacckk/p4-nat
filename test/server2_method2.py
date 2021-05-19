@@ -63,9 +63,9 @@ def reformP2PEst(packetRawLoad):
     p2pRaw = []
     for index in range(0, 18):
         p2pRaw.append(ord(packetRawLoad[index]))
-    print '[ reformP2PEst ] ', repr(packetRawLoad)
-    print '[ reformP2PEst ] ', p2pRaw, type(p2pRaw), len(p2pRaw), isinstance(p2pRaw, list)
-    print '[ reformP2PEst ] ', len(packetRawLoad[18:]), ' | ', ord(packetRawLoad[18]), ' | ', packetRawLoad[19]
+    # print '[ reformP2PEst ] ', repr(packetRawLoad)
+    # print '[ reformP2PEst ] ', p2pRaw, type(p2pRaw), len(p2pRaw), isinstance(p2pRaw, list)
+    # print '[ reformP2PEst ] ', len(packetRawLoad[18:]), ' | ', ord(packetRawLoad[18]), ' | ', packetRawLoad[19]
     if isinstance(p2pRaw, list) and len(p2pRaw) == 18:
         param_p2pOthersideIP = '%d.%d.%d.%d' % (p2pRaw[0], p2pRaw[1], p2pRaw[2], p2pRaw[3])
         param_p2pOthersidePort = p2pRaw[4]*256 + p2pRaw[5]
@@ -103,15 +103,15 @@ def ReformSplitMSG(packet):
         outcome.append(temp[1])
         # info[temp[0]] = temp[1]
     
-    print '[ ReformSplitMSG ] outcome =', len(outcome), outcome
+    # print '[ ReformSplitMSG ] outcome =', len(outcome), outcome
     # insert port 
     outcome[3] = packet[UDP].sport
     outcome[5] = packet[IP].src
     new_msg = ''
 
     # store info to "table"
-    print packet[Raw].load
-    print outcome
+    # print packet[Raw].load
+    # print outcome
 
     # table[outcome[7]][outcome[0]] = outcome[1]
     table[outcome[7]][outcome[2]] = outcome[3]
@@ -120,8 +120,8 @@ def ReformSplitMSG(packet):
 
 
     
-    print '[ ReformSplitMSG ]'
-    print table[outcome[7]]
+    # print '[ ReformSplitMSG ]'
+    # print table[outcome[7]]
     
     # merge info back to pkt[Raw]
     for i in range(0, 6, 2):
@@ -153,9 +153,9 @@ def getWho(packet):
     return outcome[7]
 
 def swapSenderReceiver(packet, iface, whoRU):
-    print '[ swapSenderReceiver 1 ]'
-    packet.show()
-    print packet[UDP].sport, packet[UDP].dport
+    # print '[ swapSenderReceiver 1 ]'
+    # packet.show()
+    # print packet[UDP].sport, packet[UDP].dport
 
     temp_whom2connect = table[whoRU]['whom2connect']
 
@@ -167,8 +167,8 @@ def swapSenderReceiver(packet, iface, whoRU):
     etherLayer.remove_payload()
     etherLayer = etherLayer / new_IP / new_UDP / msg
     
-    print '[ swapSenderReceiver 2 ]'
-    etherLayer.show()
+    # print '[ swapSenderReceiver 2 ]'
+    # etherLayer.show()
 
 
     return etherLayer
@@ -213,30 +213,30 @@ def handle_pkt_eth0(pkt):
         if p2pEst not in pkt:
             # if len(pkt[Raw].load) >= 28:
             if pkt[Raw].load.find('who=') != -1:
-                print "got a packet"
-                print '[ Before ]'
-                pkt.show()
-                print pkt[UDP].sport, pkt[UDP].dport
+                print "[ handle_pkt_eth0 ] got a packet"
+                # print '[ Before ]'
+                # pkt.show()
+                # print pkt[UDP].sport, pkt[UDP].dport
 
-                print '[ After ]'
+                # print '[ After ]'
                 pkt = ReformSplitMSG(pkt)
-                pkt.show()
-                print pkt[UDP].sport, pkt[UDP].dport
+                # pkt.show()
+                # print pkt[UDP].sport, pkt[UDP].dport
 
 
                 # # send back to host
                 pkt = swapSenderReceiver(pkt, 'server2-eth1', getWho(pkt))
-                print '[ After2 ]'
-                pkt.show()
+                # print '[ After2 ]'
+                # pkt.show()
 
                 if pkt[UDP].dport == -1:
                     packet2Bsent2eth1 = pkt
                 else:
-                    print '[ IN handle_pkt_eth0 ]'
-                    pkt.show()
+                    # print '[ IN handle_pkt_eth0 ]'
+                    # pkt.show()
                     
                     time.sleep(1)
-                    
+                    print "[ handle_pkt_eth0 ] send info to server2-eth1"
                     sendp(pkt, iface='server2-eth1', verbose=False)
                     packetCounter += 1
                     packet2Bsent2eth1 = Packet()
@@ -247,7 +247,7 @@ def handle_pkt_eth0(pkt):
                 sys.stdout.flush()
             else:
                 print 'got a packet'
-                pkt.show()
+                # pkt.show()
 
 
 
@@ -261,35 +261,36 @@ def handle_pkt_server2_eth1(pkt):
     if UDP in pkt :
         packetCounter += 1
         if p2pEst not in pkt:
-            print '[ handle_pkt_server2_eth1 ] pkt[Raw].load.find("who=") != -1', pkt[Raw].load.find('who=')
+            # print '[ handle_pkt_server2_eth1 ] pkt[Raw].load.find("who=") != -1', pkt[Raw].load.find('who=')
             if pkt[Raw].load.find('who=') != -1:
-                print "got a packet"
-                print '------------------------ 1 --------------------------'
-                print '[ Before ]'
-                pkt.show()
-                print pkt[UDP].sport, pkt[UDP].dport
+                print "[ handle_pkt_server2_eth1 ] got a packet"
+                # print '------------------------ 1 --------------------------'
+                # print '[ Before ]'
+                # pkt.show()
+                # print pkt[UDP].sport, pkt[UDP].dport
 
-                print '------------------------ 2 --------------------------'
-                print '[ After ]'
+                # print '------------------------ 2 --------------------------'
+                # print '[ After ]'
                 pkt = ReformSplitMSG(pkt)
-                pkt.show()
-                print pkt[UDP].sport, pkt[UDP].dport
+                # pkt.show()
+                # print pkt[UDP].sport, pkt[UDP].dport
 
                 # send back to host
                 pkt = swapSenderReceiver(pkt, 'eth0', getWho(pkt))
-                print '------------------------ 3 --------------------------'
-                print '[ After2 ]'
-                pkt.show()
+                # print '------------------------ 3 --------------------------'
+                # print '[ After2 ]'
+                # pkt.show()
 
                 if pkt[UDP].dport == -1:
                     packet2Bsent2eth0 = pkt
                 else:
-                    print '------------------------ 4 --------------------------'
-                    print '[ IN handle_pkt_server2_eth1 ]'
-                    pkt.show()
+                    # print '------------------------ 4 --------------------------'
+                    # print '[ IN handle_pkt_server2_eth1 ]'
+                    # pkt.show()
 
                     time.sleep(1)
                     
+                    print '[ handle_pkt_server2_eth1 ] send info to eth0'
                     sendp(pkt, iface='eth0', verbose=False)
                     packetCounter += 1
                     packet2Bsent2eth0 = Packet()
@@ -299,8 +300,8 @@ def handle_pkt_server2_eth1(pkt):
                 # hexdump(pkt)
                 sys.stdout.flush()
             else:
-                print '\n!go a packet!\n'
-                pkt.show()
+                print '\n!got a packet!\n'
+                # pkt.show()
 
 
     elif ICMP in pkt:
@@ -319,14 +320,14 @@ def getIsDoneSniff_server_eth1(x):
 def sendBack(packet):
     global packetCounter
     # make sure the both got right candidatePort
-    print '[ Send Back ]', packet[p2pEst].whoAmI, packet[p2pEst].whom2Connect
+    # print '[ Send Back ]', packet[p2pEst].whoAmI, packet[p2pEst].whom2Connect
     sender_in = num2host[packet[p2pEst].whoAmI]
     receiver_in = num2host[packet[p2pEst].whom2Connect]
-    print '[ Send Back ]', table[ sender_in ][1][ receiver_in ]
+    # print '[ Send Back ]', table[ sender_in ][1][ receiver_in ]
     packet[p2pEst].p2pOthersidePort = table[ receiver_in ][1][ sender_in ]
-    print '[ Send Back ]'
-    packet.show()
-    print '\n'
+    # print '[ Send Back ]'
+    # packet.show()
+    # print '\n'
 
     # revise packet[Ether] header and send back to host 
     if packet[IP].dst == "140.116.0.3":
@@ -394,7 +395,7 @@ def updateRaw(packet, port):
     # update info
     outcome[3] = port
 
-    print '[ Update Raw ]', outcome
+    # print '[ Update Raw ]', outcome
 
     # reassemble info
     for i in range(0, 4, 2):
@@ -436,29 +437,29 @@ def main():
 
             time.sleep(1)
 
-            print '[ Main ] end sniffing'
-            print '[ Main ] packet2Bsent2eth0 == None', packet2Bsent2eth0 is None
-            if packet2Bsent2eth0 is not None:
-                packet2Bsent2eth0.show()
-            print '[ Main ] packet2Bsent2eth1 == None', packet2Bsent2eth1 is None
-            if packet2Bsent2eth1 is not None:
-                packet2Bsent2eth1.show()
+            # print '[ Main ] end sniffing'
+            # print '[ Main ] packet2Bsent2eth0 == None', packet2Bsent2eth0 is None
+            # if packet2Bsent2eth0 is not None:
+            #     packet2Bsent2eth0.show()
+            # print '[ Main ] packet2Bsent2eth1 == None', packet2Bsent2eth1 is None
+            # if packet2Bsent2eth1 is not None:
+            #     packet2Bsent2eth1.show()
 
             if UDP in packet2Bsent2eth0:
                 # add missing info
                 packet2Bsent2eth0[UDP].dport = FromSrcPort2DstPort(packet2Bsent2eth0[UDP].sport)
 
                 # add to Raw
-                print '[ AAAAA ]', table['h1']
-                print '[ AAAAA ]', table['h3']
+                # print '[ AAAAA ]', table['h1']
+                # print '[ AAAAA ]', table['h3']
                 temp_2server1 = get2server1port(packet2Bsent2eth0[Raw].load)
-                print '[ AAAAA ]', temp_2server1
+                # print '[ AAAAA ]', temp_2server1
                 othersidePort = From2server1Port2DstPort(temp_2server1)
-                print '[ AAAAA ]', othersidePort
+                # print '[ AAAAA ]', othersidePort
                 packet2Bsent2eth0 = updateRaw(packet2Bsent2eth0, othersidePort)
                 
-                print '[ AAAAAA ]'
-                packet2Bsent2eth0.show()
+                print '[ Main A ] send info to eth0'
+                # packet2Bsent2eth0.show()
                 sendp(packet2Bsent2eth0, iface='eth0', verbose=False)
                 packetCounter += 1
                 packet2Bsent2eth0 = Packet()
@@ -476,8 +477,9 @@ def main():
                 othersidePort = From2server1Port2DstPort(temp_2server1)
                 packet2Bsent2eth1 = updateRaw(packet2Bsent2eth1, othersidePort)
 
-                print '[ BBBBBB ]'
-                packet2Bsent2eth1.show()
+                # print '[ BBBBBB ]'
+                # packet2Bsent2eth1.show()
+                print '[ Main B ] send info to server2-eth1'
                 sendp(packet2Bsent2eth1, iface='server2-eth1', verbose=False)
                 packetCounter += 1
                 packet2Bsent2eth1 = Packet()

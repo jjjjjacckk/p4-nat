@@ -86,14 +86,14 @@ class p2pEst(Packet):
 
 def getRawInfo(packet, index):
     msg = packet[Raw].load
-    print '[ getRawInfo ]', msg
-    print '[ getRawInfo ]', index
+    # print '[ getRawInfo ]', msg
+    # print '[ getRawInfo ]', index
     parse = {'2server1': -1, '2server2': -1, '2serverIP': '0.0.0.0', 'who': '', 'whom2connect': ''}
 
     for i in msg.split(';'):
-        print '[ getRawInfo ] i =', i
+        # print '[ getRawInfo ] i =', i
         temp = i.split('=')
-        print '[ getRawInfo ] temp =', temp
+        # print '[ getRawInfo ] temp =', temp
         parse[temp[0]] = temp[1]
 
     if index in ['2server1', '2server2']:
@@ -102,8 +102,8 @@ def getRawInfo(packet, index):
         return parse[index]
     
 def checkPacket(packet, queryNum):
-    print '[ checkPacket ]', queryNum
-    print '[ checkPacket ]'
+    # print '[ checkPacket ]', queryNum
+    # print '[ checkPacket ]'
     packet.show()
 
     outcome = True
@@ -132,32 +132,32 @@ def checkPacket(packet, queryNum):
     return True
 
 def swapSenderReceiver(packet):
-    print '[ swapSenderReceiver ] packet ='
+    # print '[ swapSenderReceiver ] packet ='
     packet.show()
     etherLayer = Ether(src=get_if_hwaddr('eth0'), dst='ff:ff:ff:ff:ff:ff')
     new_IP = IP(src=packet[IP].dst, dst=packet[IP].src)
     new_UDP = UDP(sport=packet[UDP].dport, dport=packet[UDP].sport)
 
-    print '[ swapSenderReceiver ] index2host[int(packet[IP].dst[-1]) - 1] =', index2host[int(packet[IP].dst[-1]) - 1]
+    # print '[ swapSenderReceiver ] index2host[int(packet[IP].dst[-1]) - 1] =', index2host[int(packet[IP].dst[-1]) - 1]
     msg = 'TEST;whoAmI=%s' % ( index2host[int(packet[IP].dst[-1]) - 1] )
 
     etherLayer.remove_payload()
     etherLayer = etherLayer / new_IP / new_UDP / msg
     
-    print '[ swapSenderReceiver 2 ] packet to send out ='
+    # print '[ swapSenderReceiver 2 ] packet to send out ='
     etherLayer.show()
 
     return etherLayer
 
 def SendP_threading(HostSrcPortList, randomDstPort):
     global param_whoAmI, param_whom2connect, isDoneSendP, isDoneSniff, testNATPort, testSrcPort, packetCounter
-    print '[ SendP_threading ] isDoneSniff =', isDoneSniff, isDoneSendP
+    print '[ SendP_threading ]'
     
     # ORIGINAL CODE
     for two in range(0, 2):
         isEarlyStop = False
         for i in range(0, 1000):
-            print '[ SendP_threading ] i =', i
+            print '[ SendP_threading ] round = %d, i =%d\n' % (two, i)
             if not isDoneSniff:     # early stopping
                 packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
                                         sp=HostSrcPortList[i], dp=randomDstPort, isTEST=True)
@@ -170,10 +170,10 @@ def SendP_threading(HostSrcPortList, randomDstPort):
                 # sendp(packet, iface='eth0', verbose=False)
                 # time.sleep(0.02)
                 
-                print '[ SendP_threading ] send second one'
+                # print '[ SendP_threading ] send second one'
                 sendp(packet, iface='eth0', verbose=False)
                 packetCounter += 1
-                print 'send %dth packet' % i
+                # print 'send %dth packet' % i
                 time.sleep(0.02)
             else:
                 isEarlyStop = True
@@ -183,27 +183,27 @@ def SendP_threading(HostSrcPortList, randomDstPort):
 
     # FIXME: TEST code
     # for i in range(0, 1):
-    #     print '[ SendP_threading ] i =', i
+        # print '[ SendP_threading ] i =', i
     #     if not isDoneSniff:     # early stopping
     #         packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
     #                                 sp=testSrcPort[i], dp=556, isTEST=True)
-    #         # print '[ handle_pkt_query2 ] packet ='
+            print '[ handle_pkt_query2 ] packet ='
     #         packet.show()
 
     #         # send twice two catch packet
-    #         print '[ SendP_threading ] send first one'
+            # print '[ SendP_threading ] send first one'
     #         sendp(packet, iface='eth0', verbose=False)
     #         time.sleep(0.005)
             
-    #         print '[ SendP_threading ] send second one'
+            # print '[ SendP_threading ] send second one'
     #         sendp(packet, iface='eth0', verbose=False)
-    #         print 'send %dth packet' % i
+            # print 'send %dth packet' % i
     #         time.sleep(0.02)
     #     else:
     #         break
     
     isDoneSendP = True
-    print '[ SendP_threading ] Leaving'
+    # print '[ SendP_threading ] Leaving'
 
 def Sniff_threading():
     print '[ Sniff_threading ]'
@@ -215,13 +215,14 @@ def handle_pkt_receive(pkt):
     if UDP in pkt:
         if pkt[IP].dst == index2addr[int(param_whoAmI[1]) - 1]:
             packetCounter += 1
-            print '[ handle_pkt_receive ] in UDP: TRUE'
+            print '[ handle_pkt_receive ] Succeed'
 
             # spair time for controller to prolong the TTL of hit table entry
             time.sleep(1)
 
             if not isWait:
                 # TODO: Send back the packet
+                print '[ handle_pkt_receive ] Send Test Packet'
                 packet = swapSenderReceiver(pkt)
                 sendp(packet, iface='eth0', verbose=False)
                 packetCounter += 1
@@ -234,8 +235,8 @@ def handle_pkt_query1(pkt):
     global isDoneSniff, connection_counter, resendPort, packetCounter
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
-        print "got a packet"
-        print '------------------------ 1 --------------------------'
+        print "[ handle_pkt_query1 ] got a packet"
+        # print '------------------------ 1 --------------------------'
         pkt.show()
         if checkPacket(pkt, 1):
             isDoneSniff = True
@@ -251,26 +252,26 @@ def handle_pkt_query1(pkt):
         packet2server = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, \
                                  dstAddr='140.116.0.2', sp='22222', dp=Host2ServerPort[param_whoAmI], \
                                  Q1packet=pkt)
-        print '------------------------ 2 --------------------------'
+        # print '------------------------ 2 --------------------------'
         print '[ handle_pkt_query1 ] Query 2'
-        packet2server.show()              
+        # packet2server.show()
         sendp(packet2server, iface='eth0', verbose=False)
         packetCounter += 1
 
-        print '\n[ handle_pkt_query1 ]', isDoneSniff, '\n'
+        # print '\n[ handle_pkt_query1 ]', isDoneSniff, '\n' 
 
         sys.stdout.flush()
     elif ICMP in pkt:
         pkt.show2()
 
 def handle_pkt_query2(pkt):
-    print '[ handle_pkt_query2 ] processing'
+    # print '[ handle_pkt_query2 ] processing'
     global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI, \
            isWait, testNATPort, testSrcPort, packetCounter
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
-        print "got a packet"
-        pkt.show()
+        print "[ handle_pkt_query2 ] got a packet"
+        # pkt.show()
 
         if checkPacket(pkt, 2):
 
@@ -303,10 +304,9 @@ def handle_pkt_query2(pkt):
                 for i in range(0, 1000):
                     packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
                                             sp=HostSrcPortList[i], dp=randomDstPort, isTEST=True)
-                    # print '[ handle_pkt_query2 ] packet ='
+                    print '[ handle_pkt_query2 ] send %dth packet' % i
                     # packet.show() 
                     sendp(packet, iface='eth0', verbose=False)
-                    print 'send %dth packet' % i
                     time.sleep(0.02)
                     packetCounter += 1
 
@@ -314,10 +314,10 @@ def handle_pkt_query2(pkt):
                 # for i in range(0, 1):
                 #     packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
                 #                             sp=testSrcPort[i], dp=556, isTEST=True)
-                #     # print '[ handle_pkt_query2 ] packet ='
+                    print '[ handle_pkt_query2 ] packet ='
                 #     packet.show() 
                 #     sendp(packet, iface='eth0', verbose=False)
-                #     print 'send %dth packet' % i
+                    # print 'send %dth packet' % i
                 #     time.sleep(0.02)
                     
                 isDoneSniff = True
@@ -335,9 +335,9 @@ def handle_pkt_query2(pkt):
                 thread2.start()
 
                 thread1.join()
-                print '[ handle_pkt_query2 ] thread1 finished'
+                # print '[ handle_pkt_query2 ] thread1 finished'
                 thread2.join()
-                print '[ handle_pkt_query2 ] thread1 finished'
+                # print '[ handle_pkt_query2 ] thread1 finished'
 
                 
 
@@ -349,7 +349,7 @@ def handle_pkt_query2(pkt):
             # print '[ handle_pkt_query2 ] isP2PEstValid = ', p2pEst in packet
             # sendp(packet, iface='eth0', verbose=False)
             
-        print '\n[ handle_pkt_query2 ]', isDoneSniff, '\n'
+        # print '\n[ handle_pkt_query2 ]', isDoneSniff, '\n'
 
         sys.stdout.flush()
     elif ICMP in pkt:
@@ -444,9 +444,9 @@ def main():
 
 
     if isDoneSniff:
-        print 'Connection Success!!!'
+        print '[ Main ] Connection Success!!!'
     else:
-        print 'Connection Fail!!!'
+        print '[ Main ] Connection Fail!!!'
 
     # log
     log = open('/home/p4/Desktop/p4-nat/test/method2_log/host_%s.log' % param_whoAmI, 'a')
