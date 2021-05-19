@@ -60,9 +60,9 @@ I compared my solution with which proposed by Waseda University in this [paper](
             $ cd ../test
             $ ./server_method1.py server1
             ```
-- [ Method2 ]
+- [ Method2 ] Method in Paper
     1. In CLI:
-        - Open terminal of `h1`, `h3`, and `server1` 
+        - Open terminal of two `h1`, two `h3`, `server1`, and 'server2'
             ```bash 
             $ xterm h1 h1 h3 h3 server1 server2
             ``` 
