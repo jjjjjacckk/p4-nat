@@ -101,7 +101,7 @@ header p2pEst_t {
     bit<1>  direction;          // transmittion direction of packet
                                 // 1. to server = 0, build connection
                                 // 2. to host   = 1, return information from server
-    bit<11>  whom2Connect;      // specify the host to connect to
+    bit<11> whom2Connect;      // specify the host to connect to
                                 // 0 = h1, 1 = h2, 2 = h3, 3 = h4
                                 // 4 = server1, 5 = server2
     bit<4>  isEstPacket;        // 0 = is normal packet; 1 = packet for establish connection

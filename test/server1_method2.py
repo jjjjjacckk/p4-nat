@@ -195,7 +195,7 @@ def handle_pkt_eth0(pkt):
             # # send back to host
             pkt = swapSenderReceiver(pkt, 'eth0')
             # print '[ After2 ]'
-            # pkt.show()
+            pkt.show()
 
             time.sleep(1)
 

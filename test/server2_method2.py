@@ -14,10 +14,10 @@ from scapy.fields import BitField, IntField, ShortField, IPField
 from scapy.layers.inet import _IPOption_HDR
 
 num2host = ['h1', 'h2', 'h3', 'h4']
-table = {'h1': {'2server1': 59800, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 1111}, 
-         'h2': {'2server1': 13185, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 2222}, 
-         'h3': {'2server1': 34091, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 3333}, 
-         'h4': {'2server1': 53685, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 4444} }
+table = {'h1': {'2server1': -1, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 1111}, 
+         'h2': {'2server1': -1, '2server2': -1, '2serverIP': '140.116.0.3', 'whom2connect': '', 'server2port': 2222}, 
+         'h3': {'2server1': -1, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 3333}, 
+         'h4': {'2server1': -1, '2server2': -1, '2serverIP': '140.116.0.4', 'whom2connect': '', 'server2port': 4444} }
 
 
 class p2pEst(Packet):
@@ -113,7 +113,7 @@ def ReformSplitMSG(packet):
     # print packet[Raw].load
     # print outcome
 
-    # table[outcome[7]][outcome[0]] = outcome[1]
+    table[outcome[7]][outcome[0]] = outcome[1]
     table[outcome[7]][outcome[2]] = outcome[3]
     table[outcome[7]][outcome[4]] = outcome[5]
     table[outcome[7]][outcome[8]] = outcome[9]
@@ -371,14 +371,16 @@ def get2server1port(load):
     return int(outcome[1])
 
 def From2server1Port2DstPort(port):
-    if table['h1']['2server1'] == port:
-        return table['h1']['2server2']
-    elif table['h2']['2server1'] == port:
-        return table['h2']['2server2']
-    elif table['h3']['2server1'] == port:
-        return table['h3']['2server2']
-    elif table['h4']['2server1'] == port:
-        return table['h4']['2server2']
+    # print '[ From2server1Port2DstPort ] port = ', port, type(port)
+    # print '[ From2server1Port2DstPort ] table[\'h1\'][\'2server1\'] = ', table['h1']['2server1'], type(table['h1']['2server1']) 
+    if table['h1']['2server1'] == str(port):
+        return int(table['h1']['2server2'])
+    elif table['h2']['2server1'] == str(port):
+        return int(table['h2']['2server2'])
+    elif table['h3']['2server1'] == str(port):
+        return int(table['h3']['2server2'])
+    elif table['h4']['2server1'] == str(port):
+        return int(table['h4']['2server2'])
     else:
         return -1
 
@@ -446,19 +448,28 @@ def main():
             #     packet2Bsent2eth1.show()
 
             if UDP in packet2Bsent2eth0:
+                print '[ Main A ] Before'
+                packet2Bsent2eth0.show()
                 # add missing info
                 packet2Bsent2eth0[UDP].dport = FromSrcPort2DstPort(packet2Bsent2eth0[UDP].sport)
+                # print 'packet2Bsent2eth0[UDP].dport = ', packet2Bsent2eth0[UDP].dport
+                # print 'Before Table = '
+                # for ele in table:
+                #     print ele, ':', table[ele]
+
 
                 # add to Raw
-                # print '[ AAAAA ]', table['h1']
-                # print '[ AAAAA ]', table['h3']
+                # print '[ AAAAA ]', 'h1', table['h1']
+                # print '[ AAAAA ]', 'h3', table['h3']
                 temp_2server1 = get2server1port(packet2Bsent2eth0[Raw].load)
                 # print '[ AAAAA ]', temp_2server1
                 othersidePort = From2server1Port2DstPort(temp_2server1)
                 # print '[ AAAAA ]', othersidePort
                 packet2Bsent2eth0 = updateRaw(packet2Bsent2eth0, othersidePort)
+                # print 'temp_2server1 = ', temp_2server1, type(temp_2server1), 
+                # print 'othersidePort = ', othersidePort
                 
-                print '[ Main A ] send info to eth0'
+                # print '[ Main A ] send info to eth0'
                 # packet2Bsent2eth0.show()
                 sendp(packet2Bsent2eth0, iface='eth0', verbose=False)
                 packetCounter += 1
@@ -469,17 +480,23 @@ def main():
             time.sleep(1)
 
             if UDP in packet2Bsent2eth1:
+                print '[ Main B ] Before'
+                packet2Bsent2eth1.show()
+
                 # add missing info
                 packet2Bsent2eth1[UDP].dport = FromSrcPort2DstPort(packet2Bsent2eth1[UDP].sport)
-                
+                # print 'packet2Bsent2eth1[UDP].dport = ', packet2Bsent2eth1[UDP].dport
+                # print 'Before Table = ', table
                 # add to Raw
                 temp_2server1 = get2server1port(packet2Bsent2eth1[Raw].load)
                 othersidePort = From2server1Port2DstPort(temp_2server1)
                 packet2Bsent2eth1 = updateRaw(packet2Bsent2eth1, othersidePort)
+                # print 'temp_2server1 = ', temp_2server1
+                # print 'othersidePort = ', othersidePort
 
                 # print '[ BBBBBB ]'
+                # print '[ Main B ] send info to server2-eth1'
                 # packet2Bsent2eth1.show()
-                print '[ Main B ] send info to server2-eth1'
                 sendp(packet2Bsent2eth1, iface='server2-eth1', verbose=False)
                 packetCounter += 1
                 packet2Bsent2eth1 = Packet()

@@ -23,7 +23,7 @@ seq_nat_1 = []
 seq_index_1 = 0                 # <- useless?
 seq_last_index_1 = 4
 seq_index_2 = 0                 # <- useless?
-seq_nat_2 = 0
+seq_nat_2 = []
 seq_last_index_2 = 4
 counter_nat1_PortUsage = 0
 counter_nat2_PortUsage = 0
@@ -371,7 +371,7 @@ def WriteBasicRule(p4info_helper, nat1, nat2, isMethod1):
 
 
 
-    # # match_sender
+    # match_sender
     set_match_sender(p4info_helper, nat1, "10.0.1.1", 0)
     set_match_sender(p4info_helper, nat1, "10.0.2.2", 1)
     set_match_sender(p4info_helper, nat1, "192.168.3.3", 2)
@@ -513,9 +513,9 @@ def digest_threading1(nat, p4info_helper):
 
                     # # Original Code
                     # # FIXME: is the TTL OK ?????
-                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_1[seq_last_index_1], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=120*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=120*1000000000, TTL_LastHit=1)
+                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_1[seq_last_index_1], hostIP=hostIP, hostPort=hostPort, TTL=140*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=140*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=seq_nat_1[seq_last_index_1], TTL=140*1000000000, TTL_LastHit=1)
                     
                     # record entries
                     key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
@@ -525,9 +525,9 @@ def digest_threading1(nat, p4info_helper):
                     timing.append(time.ctime(time.time()))
 
                     # FIXME: TEST method2
-                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_1], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=120*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=120*1000000000, TTL_LastHit=1)
+                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_1], hostIP=hostIP, hostPort=hostPort, TTL=140*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=140*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.3', NATPort=testNATPort[test_counter_1], TTL=140*1000000000, TTL_LastHit=1)
 
                     # key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
                     # NewNATEntryMapping[key] = testNATPort[test_counter_1]
@@ -721,9 +721,9 @@ def digest_threading2(nat, p4info_helper):
                     # print '[ AddNewNATEntry ]', othersideIP, othersidePort, hostIP, hostPort
 
                     # ORIGINAL CODE
-                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_2[seq_last_index_2], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=120*1000000000, TTL_LastHit=1)
-                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=120*1000000000, TTL_LastHit=1)
+                    set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=seq_nat_2[seq_last_index_2], hostIP=hostIP, hostPort=hostPort, TTL=140*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=140*1000000000, TTL_LastHit=1)
+                    set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=seq_nat_2[seq_last_index_2], TTL=140*1000000000, TTL_LastHit=1)
                     
                     # record the NAT Info
                     key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
@@ -732,9 +732,9 @@ def digest_threading2(nat, p4info_helper):
                     seq_last_index_2 += 1
                     
                     # FIXME: TEST code
-                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_2], hostIP=hostIP, hostPort=hostPort, TTL=120*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=120*1000000000, TTL_LastHit=1)
-                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=120*1000000000, TTL_LastHit=1)
+                    # set_match_ingress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, candidatePort=testNATPort[test_counter_2], hostIP=hostIP, hostPort=hostPort, TTL=140*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=140*1000000000, TTL_LastHit=1)
+                    # set_match_egress_nat_ip_method2(p4info_helper, nat, othersideIP, othersidePort, srcIP=hostIP, srcPort=hostPort, NATIP='140.116.0.4', NATPort=testNATPort[test_counter_2], TTL=140*1000000000, TTL_LastHit=1)
 
                     # key = buildNATEntryMappingKey(othersideIP=othersideIP, hostIP=hostIP, othersidePort=othersidePort, hostPort=hostPort)
                     # NewNATEntryMapping[key] = testNATPort[test_counter_2]
@@ -921,7 +921,7 @@ def closeLog():
     nat1_log.close()
     nat2_log.close()
 
-def main(p4info_file_path, bmv2_file_path, method):
+def main(p4info_file_path, bmv2_file_path, method, port_algo):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
     # print '[ main ] p4info_helper = ', p4info_helper
@@ -929,11 +929,25 @@ def main(p4info_file_path, bmv2_file_path, method):
     # Generate source port sequence
     global seq_nat_1, seq_nat_2, seq_last_index_1, seq_last_index_2, counter_nat1_PortUsage, counter_nat2_PortUsage, timing_counter, global_method
     global timing, nat1_log, nat2_log
-    seq_nat_1 = random.sample(range(0, 65536), 65536)
-    seq_nat_2 = random.sample(range(0, 65536), 65536)
     global_method = method
 
+    if port_algo == 'inc':
+        for i in range(0, 65536):
+            seq_nat_1.append(i)
+            seq_nat_2.append(i)
+    elif port_algo == 'dec':
+        for i in range(65535, -1, -1):
+            seq_nat_1.append(i)
+            seq_nat_2.append(i)
+    elif port_algo == 'random':
+        seq_nat_1 = random.sample(range(0, 65536), 65536)
+        seq_nat_2 = random.sample(range(0, 65536), 65536)
+    else:
+        print 'port_algo no match'
+        sys.exit(1)
+
     try:
+        
         # Create a switch connection object for nat1 and s2;
         # this is backed by a P4Runtime gRPC connection.
         # Also, dump all P4Runtime messages sent to switch to given txt files.
@@ -1021,7 +1035,7 @@ def main(p4info_file_path, bmv2_file_path, method):
         # seq_last_index_1 += 11
         
         
-
+        
         # TODO: only when method1 is tested fine with line 798~843 can i delete the code comment below
         '''
         start = time.time()
@@ -1288,7 +1302,7 @@ def main(p4info_file_path, bmv2_file_path, method):
             #     end = time.time()
             #     print '[ Main ] timing_counter = %d, elapsed time = ' % timing_counter, end - start
                 # timing_counter = 0
-
+        
         '''
     except KeyboardInterrupt:
         print " Shutting down."
@@ -1309,6 +1323,8 @@ if __name__ == '__main__':
                         default='../build/simple_router_16.json')
     parser.add_argument('--method', help='specify method1 or method2',
                         type=str, action='store', required=True)
+    parser.add_argument('--port-algo', help='specify port assigning algorithim',
+                        type=str, action='store', required=True)
     args = parser.parse_args()
 
     if not os.path.exists(args.p4info):
@@ -1321,4 +1337,4 @@ if __name__ == '__main__':
         parser.exit(1)
 
     print 'args.p4info  = %s' % args.p4info 
-    main(args.p4info, args.bmv2_json, args.method)
+    main(args.p4info, args.bmv2_json, args.method, args.port_algo)

@@ -32,6 +32,7 @@ resendPort = 0
 param_whoAmI = ''
 param_whom2connect = ''
 packetCounter = 0
+timesOfexe = 0
 
 # isReceiveCheck_IsWait = False
 # isReceiveCheck_IsNotWait = False
@@ -254,7 +255,7 @@ def handle_pkt_query1(pkt):
                                  Q1packet=pkt)
         # print '------------------------ 2 --------------------------'
         print '[ handle_pkt_query1 ] Query 2'
-        # packet2server.show()
+        packet2server.show()
         sendp(packet2server, iface='eth0', verbose=False)
         packetCounter += 1
 
@@ -267,11 +268,11 @@ def handle_pkt_query1(pkt):
 def handle_pkt_query2(pkt):
     # print '[ handle_pkt_query2 ] processing'
     global isDoneSniff, connection_counter, resendPort, param_whom2connect, param_whoAmI, \
-           isWait, testNATPort, testSrcPort, packetCounter
+           isWait, testNATPort, testSrcPort, packetCounter, timesOfexe
     # if TCP in pkt and pkt[TCP].dport == 1234:
     if UDP in pkt:
         print "[ handle_pkt_query2 ] got a packet"
-        # pkt.show()
+        pkt.show()
 
         if checkPacket(pkt, 2):
 
@@ -280,11 +281,27 @@ def handle_pkt_query2(pkt):
             #   - 1000 src ip
             temp_2server1 = getRawInfo(pkt, '2server1')
             temp_2server2 = getRawInfo(pkt, '2server2')
+            
+            with open('/home/p4/Desktop/p4-nat/test/portRef.txt', 'a+') as f:
+                f.write('temp_2server1 = ' + str(temp_2server1) + ', temp_2server2 = ' + str(temp_2server2) + '\n')
 
-            # gen dstPort
-            randomDstPort = temp_2server1
-            while randomDstPort in [temp_2server1, temp_2server2]:
-                randomDstPort = random.randint(0, 65535)
+            if abs(temp_2server1 - temp_2server2) != 2:
+                # port assignment algorithm = Random
+                # gen dstPort
+                randomDstPort = temp_2server1
+                while randomDstPort in [temp_2server1, temp_2server2]:
+                    randomDstPort = random.randint(0, 65535)
+            else:
+                if temp_2server1 < temp_2server2:
+                    if timesOfexe == 1:
+                        randomDstPort = temp_2server2 + 2
+                    else:
+                        randomDstPort = temp_2server2 + 2 + 1000 * (timesOfexe-1)
+                else:
+                    if timesOfexe == 1:
+                        randomDstPort = temp_2server2 - 2   
+                    else:
+                        randomDstPort = temp_2server2 - 2 - 1000 * (timesOfexe-1)
             
             no_match = [11111, 22222]
             HostSrcPortList = []
@@ -296,7 +313,7 @@ def handle_pkt_query2(pkt):
                     HostSrcPortList.append(x[0])
 
             HostSrcPortList.sort()
-
+            
             if not isWait:
                 print '[ handle_pkt_query2 ] threading.... NotWait'
                 # send packets
@@ -339,7 +356,7 @@ def handle_pkt_query2(pkt):
                 thread2.join()
                 # print '[ handle_pkt_query2 ] thread1 finished'
 
-                
+            
 
 
             # packet = buildpacket(whoAmI=param_whoAmI, whom2connect=param_whom2connect, dstAddr=Host2NATAddr[param_whom2connect], \
@@ -388,7 +405,7 @@ def buildpacket(whoAmI, whom2connect, dstAddr, sp, dp, Q1packet=None, isTEST=Fal
     return pkt
 
 def main():
-    global resendPort, isDoneSniff, param_whom2connect, param_whoAmI, isWait, packetCounter
+    global resendPort, isDoneSniff, param_whom2connect, param_whoAmI, isWait, packetCounter, timesOfexe
 
 
     start = time.time()
@@ -399,6 +416,7 @@ def main():
     
     param_whoAmI = sys.argv[1]
     param_whom2connect = sys.argv[2]
+    timesOfexe = int(sys.argv[3])
     
     # When your index has bigger index, you'll have to wait until the host with
     # smaller index finish adding 500 (not determined yet) temporary NAT table entries
@@ -430,7 +448,7 @@ def main():
     print '[ Main ] Sniff 3'
     if not isWait:
         isDoneSniff = False
-        sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff, timeout=120)
+        sniff(iface='eth0', prn=handle_pkt_receive, stop_filter=getIsDoneSniff, timeout=140)
         
         # TODO: send info to server1 to report whether we establish the connection or not
         # TODO: 
