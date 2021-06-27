@@ -89,3 +89,45 @@ End = Tue May 25 02:39:51 2021
 Elapsed Time = 5.916366
 Packet = 4
 ------------------------------
+Thu May 27 09:46:45 2021
+Connection Succeed
+Start = Thu May 27 09:46:41 2021
+End = Thu May 27 09:46:45 2021
+Elapsed Time = 4.212752
+Packet = 4
+------------------------------
+Thu May 27 09:50:10 2021
+Connection Succeed
+Start = Thu May 27 09:50:06 2021
+End = Thu May 27 09:50:10 2021
+Elapsed Time = 4.168156
+Packet = 4
+------------------------------
+Sat Jun 26 16:41:43 2021
+Connection Fail
+Start = Sat Jun 26 16:41:34 2021
+End = Sat Jun 26 16:41:43 2021
+Elapsed Time = 9.453625
+Packet = 3
+------------------------------
+Sat Jun 26 16:42:32 2021
+Connection Fail
+Start = Sat Jun 26 16:42:24 2021
+End = Sat Jun 26 16:42:32 2021
+Elapsed Time = 8.168868
+Packet = 3
+------------------------------
+Sat Jun 26 16:44:02 2021
+Connection Fail
+Start = Sat Jun 26 16:43:53 2021
+End = Sat Jun 26 16:44:02 2021
+Elapsed Time = 9.347971
+Packet = 3
+------------------------------
+Sat Jun 26 16:48:35 2021
+Connection Succeed
+Start = Sat Jun 26 16:48:29 2021
+End = Sat Jun 26 16:48:35 2021
+Elapsed Time = 5.719408
+Packet = 4
+------------------------------

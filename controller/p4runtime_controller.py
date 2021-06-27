@@ -20,9 +20,7 @@ from p4.v1 import p4runtime_pb2
 import p4runtime_lib.helper
 
 seq_nat_1 = []
-seq_index_1 = 0                 # <- useless?
 seq_last_index_1 = 4
-seq_index_2 = 0                 # <- useless?
 seq_nat_2 = []
 seq_last_index_2 = 4
 counter_nat1_PortUsage = 0
@@ -50,24 +48,11 @@ ip2HostIndex = {"10.0.1.1": 0, "10.0.2.2": 1, \
            "192.168.3.3": 2, "192.168.4.4": 3, \
            "140.116.0.1": 4, "140.116.0.2": 5}
 
-dst2Mac = {"10.0.1.1": "08:00:00:00:01:11", \
-           "10.0.2.2": "08:00:00:00:02:22", \
-           "192.168.3.3": "08:00:00:00:03:33", \
-           "192.168.4.4": "08:00:00:00:04:44", \
-           "140.116.0.1": "08:00:00:00:05:55", \
-           "140.116.0.2": "08:00:00:00:06:66"}
-
 nat1Dst2EgressPort = {"10.0.1.1": 1, "10.0.2.2": 2, "140.116.0.1": 3, "140.116.0.2": 4, "140.116.0.4": 5}
 nat2Dst2EgressPort = {"192.168.3.3": 1, "192.168.4.4": 2, "140.116.0.1": 3, "140.116.0.2": 4, "140.116.0.3": 5}
 
-
-def MacAddr2fourtyEightbits(target):
-    a = target.split(':')
-    b = ""
-    for ele in a:
-        b += ele
-    
-    return b.decode('hex')
+digests_nat1 = p4runtime_pb2.StreamMessageRequest()
+digests_nat2 = p4runtime_pb2.StreamMessageRequest()
 
 def WriteNATRule(p4info_helper, NATNumber):
     # TODO: add table Entry
@@ -145,17 +130,6 @@ def set_rev_nat_tcp(p4info_helper, nat, hostIP, h2nPort, NATIP, allocatePort):
         action_params={
             "ipv4Addr": hostIP,
             "tcpPort": h2nPort
-        })
-    nat.WriteTableEntry(table_entry)
-
-def set_match_nat_ip(p4info_helper, nat, ipv4Dst):
-    table_entry = p4info_helper.buildTableEntry(
-        table_name="match_nat_ip",
-        match_fields={
-            "ipv4.dstAddr": [ipv4Dst, 32]
-        },
-        action_name="reg",
-        action_params={
         })
     nat.WriteTableEntry(table_entry)
 
@@ -286,10 +260,8 @@ def int_prettify(int_string):
     return first*256 + second
 
 def WriteBasicRule(p4info_helper, nat1, nat2, isMethod1):
-    global seq_nat_1, seq_nat_2, seq_index_1, seq_index_2, seq_last_index_1, seq_last_index_2
+    global seq_nat_1, seq_nat_2, seq_last_index_1, seq_last_index_2
     # index: 0, 1 = set for server1 and server2 connection
-    seq_index_1 = 2
-    seq_index_2 = 2
 
     # print '[ WriteTableEntry ]'
     # [ ingress ]
@@ -322,8 +294,7 @@ def WriteBasicRule(p4info_helper, nat1, nat2, isMethod1):
         set_forward(p4info_helper, nat1, '140.116.0.%d' % x, '08:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
         set_forward(p4info_helper, nat2, '140.116.0.%d' % x, '08:00:00:00:%02d:%d%d' % (x+4, x+4, x+4))
 
-    # ipv4_lpm
-    #   - table_add ipv4_lpm set_nhop 10.0.1.1/32 => 10.0.1.1 1
+    # ipv4_lpm: table_add ipv4_lpm set_nhop 10.0.1.1/32 => 10.0.1.1 1
     for x in range(1, 3):
         set_ipv4_lpm(p4info_helper, nat1, '10.0.%d.%d' % (x, x), x)
         set_ipv4_lpm(p4info_helper, nat2, '192.168.%d.%d' % (x+2, x+2), x)
@@ -368,8 +339,6 @@ def WriteBasicRule(p4info_helper, nat1, nat2, isMethod1):
     set_match_egress_nat_ip_method2(p4info_helper, nat2, "140.116.0.1", 4444, "192.168.4.4", 11111, "140.116.0.4", seq_nat_2[1])  # host4 -> server1
     set_match_egress_nat_ip_method2(p4info_helper, nat2, "140.116.0.2", 3333, "192.168.3.3", 22222, "140.116.0.4", seq_nat_2[2])  # host3 -> server2
     set_match_egress_nat_ip_method2(p4info_helper, nat2, "140.116.0.2", 4444, "192.168.4.4", 22222, "140.116.0.4", seq_nat_2[3])  # host4 -> server2
-
-
 
     # match_sender
     set_match_sender(p4info_helper, nat1, "10.0.1.1", 0)
@@ -418,10 +387,6 @@ def WriteBasicRule(p4info_helper, nat1, nat2, isMethod1):
         
         seq_last_index_1 = 15
         seq_last_index_2 = 15
-
-digests_nat1 = p4runtime_pb2.StreamMessageRequest()
-digests_nat2 = p4runtime_pb2.StreamMessageRequest()
-
 
 def buildNATEntryMappingKey(othersideIP, hostIP, othersidePort, hostPort):
     return 'othersideIP=%s;hostIP=%s;othersidePort=%d;hostPort=%d' % (othersideIP, hostIP, othersidePort, hostPort)

@@ -14,6 +14,25 @@ I compared my solution with which proposed by Waseda University in this [paper](
 - [ Environment ] 
     - Ubuntu 16.04 LTS
         > Follow Official P4-Tutorial Environment [setup](https://github.com/p4lang/tutorials) 
+    - Python 2.7.12
+- [ Controller ]
+    1. Open a new terminal and change to `controller` folder.
+        ```bash 
+        $ cd ~/Desktop/p4-nat/controller
+        ```
+    2. Launch controller with configuration:
+        - usage: `sudo python ./p4runtime_controller.py --method <method> --port--algo <port-algo>`
+            - `<method>` : 
+                1. `method1` : my method
+                2. `method2` : method proposed by paper
+            - `<port-algo>` : port assigning algorithm
+                1. `inc` : increment
+                2. `dec` : decrement
+                3. `random` : random
+        - (e.g.)
+            ```bash
+            $ sudo python ./p4runtime_controller.py --method method1 --port-algo random
+            ``` 
 - [ Compilation ]
     1. Compile p4 porgram:
         ```bash
