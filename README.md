@@ -87,7 +87,12 @@ I compared my solution with which proposed by Waseda University in this [paper](
             ``` 
     2. For Host:
         - Host : `h1`, `h2`, `h3`, `h4`
-        - Usage: `./host_method1.py <whoAmI> <whom2connect>`
+        - Usage: `./host_method1.py <whoAmI> <whom2connect> <timeOfExe>`
+        - `<timeOfExe>`: 
+            - `Purpose`: This parameter is for testing performance. When testing, you may have to execute the program multiple times. The internal counter `WILL NOT` refresh every time you re-execute. Therefore, I added this parameter for informing the program to add the counter with 1000 in order to make sure that the outcome is correct. 
+            - `Usage`: 
+                - `1`: means the first time you execute the program
+                - `other number`: 
         - (e.g.) 
             ```
                 h1 -----> server1 -----> h3
@@ -98,11 +103,11 @@ I compared my solution with which proposed by Waseda University in this [paper](
             ```bash
             # On h1
             $ cd ../test
-            $ ./host_method1.py h1 h3
+            $ ./host_method2.py h1 h3 1
 
             # On h3
             $ cd ../test
-            $ ./host_method1.py h3 h1
+            $ ./host_method2.py h3 h1 1
             ```
     5. For Server:
         - Server : `server1`, `server2`

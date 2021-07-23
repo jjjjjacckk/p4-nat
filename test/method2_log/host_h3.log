@@ -320,3 +320,17 @@ End = Tue May 25 05:41:50 2021
 Elapsed Time = 125.720179
 Packet = 1040
 ------------------------------
+Fri Jul 23 06:57:07 2021
+Connection Succeed
+Start = Fri Jul 23 06:55:10 2021
+End = Fri Jul 23 06:57:07 2021
+Elapsed Time = 117.124686
+Packet = 1042
+------------------------------
+Fri Jul 23 07:17:05 2021
+Connection Fail
+Start = Fri Jul 23 07:14:23 2021
+End = Fri Jul 23 07:17:05 2021
+Elapsed Time = 162.447820
+Packet = 2002
+------------------------------
