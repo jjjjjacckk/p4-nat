@@ -1,5 +1,8 @@
 # Improvement of Symmetric NAT Traversal Mechanism in p4 Based SDN
 
+## To Know
+You don't have download all the files. Only the `p4-nat-concise` is needed.
+
 ## Credit
 This repository is forked from [blizzardplus's p4-nat repository](https://github.com/blizzardplus/p4-nat)
 
