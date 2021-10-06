@@ -1,19 +1,19 @@
 # Improvement of Symmetric NAT Traversal Mechanism in p4 Based SDN
 
 ## To Know
-You don't have download all the files. Only the `p4-nat-concise` is needed.
+**You don't have download all the files. Only the `p4-nat-concise` is needed.**
 
 ## Credit
-This repository is forked from [blizzardplus's p4-nat repository](https://github.com/blizzardplus/p4-nat)
+This repository was forked from [blizzardplus's p4-nat repository](https://github.com/blizzardplus/p4-nat)
 
-I found out that there are a lot of deprecated functions and features, so I rewrite basically all the framework for Project
+**I found out that there are a lot of deprecated functions and features, so I rewrite basically all the framework for Project on my own.**
 
 ## Introduction
 This is a Project proposing an solution for `Symmetric NAT Traversal` using p4 based SDN.
 
 I compared my solution with which proposed by Waseda University in this [paper](https://www.semanticscholar.org/paper/A-New-Method-for-Symmetric-NAT-Traversal-in-UDP-and-Yamada-Yoshida/0004757d7fc7683706b0decd8ec6ee6bdf638cc2?p2df)
 
-# Getting started
+# Get started
 
 ## Build Up The Environment
 - Ubuntu 16.04 LTS
