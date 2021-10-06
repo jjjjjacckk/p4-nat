@@ -103,7 +103,7 @@ The workflow of my algorithm.
 ## Method 2: Method in Paper
 
 ### Algorithm
-The workflow of the algorithm proposed by Waseda University in the [paper](https://www.semanticscholar.org/paper/A-New-Method-for-Symmetric-NAT-Traversal-in-UDP-and-Yamada-Yoshida/0004757d7fc7683706b0decd8ec6ee6bdf638cc2?p2df).
+The workflow of the algorithm was proposed by Waseda University in the [paper](https://www.semanticscholar.org/paper/A-New-Method-for-Symmetric-NAT-Traversal-in-UDP-and-Yamada-Yoshida/0004757d7fc7683706b0decd8ec6ee6bdf638cc2?p2df).
 ![Method2 algorithm](images/method2_algorithm.png)
 
 ### Launch Program
